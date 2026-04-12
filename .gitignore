@@ -1,0 +1,8 @@
+# Rootside node_modules
+node_modules/
+
+# Root test files
+*.mp4
+*.webm
+
+# Files inside subfolder are handled by their own .gitignore
