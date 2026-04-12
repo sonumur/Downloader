@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>Downloader</h2></div>
+    <nav class="sidebar-nav" id="adminSidebarNav"></nav>
+  </aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader">
+      <div class="user-avatar" title="Account">A</div>
+    </header>
+    <main class="main-content">
+      <h1 class="page-title">Dashboard</h1>
+
+      <!-- Live Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Blogs</div>
+          <div class="stat-value" id="statBlogs">—</div>
+          <div class="stat-change">Blog posts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Enquiries</div>
+          <div class="stat-value" id="statEnquiries">—</div>
+          <div class="stat-change" id="statNewEnq" style="color:#dc2626;"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">FAQs</div>
+          <div class="stat-value" id="statFaqs">—</div>
+          <div class="stat-change">All FAQs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Users</div>
+          <div class="stat-value" id="statUsers">—</div>
+          <div class="stat-change">Registered users</div>
+        </div>
+      </div>
+
+      <!-- Welcome Card -->
+      <div class="cards-grid">
+        <div class="card">
+          <div class="welcome-info">
+            <div class="user-avatar" id="dashAvatar">A</div>
+            <div class="welcome-text">
+              <h3>Welcome back</h3>
+              <p id="dashUserEmail">Admin</p>
+            </div>
+          </div>
+          <button class="btn-signout" id="signOutBtn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div style="margin-top:2rem;">
+        <h2 style="font-size:1rem;font-weight:600;margin-bottom:1rem;color:var(--admin-text-muted);">Quick Access</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;">
+          <a href="/admin/blogs" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">📝</div><div style="font-weight:600;">Blogs</div></div></a>
+          <a href="/admin/enquiries" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">✉️</div><div style="font-weight:600;">Enquiries</div></div></a>
+          <a href="/admin/faqs" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">❓</div><div style="font-weight:600;">FAQs</div></div></a>
+          <a href="/admin/pages" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">📄</div><div style="font-weight:600;">Pages</div></div></a>
+          <a href="/admin/users" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">👥</div><div style="font-weight:600;">Users</div></div></a>
+          <a href="/admin/settings" style="text-decoration:none;"><div class="stat-card" style="cursor:pointer;text-align:center;"><div style="font-size:1.5rem;margin-bottom:0.5rem;">⚙️</div><div style="font-weight:600;">Settings</div></div></a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Dashboard');
+
+// Show user email/initial
+if (window.firebase && firebase.apps.length) {
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      const initial = (user.email || 'A').charAt(0).toUpperCase();
+      document.getElementById('dashAvatar').textContent = initial;
+      document.getElementById('dashUserEmail').textContent = user.email;
+      const topAvatar = document.querySelector('#adminTopHeader .user-avatar');
+      if (topAvatar) topAvatar.textContent = initial;
+    }
+  });
+}
+
+// Load live stats from Firestore
+async function loadStats() {
+  const stats = await loadDashboardStats();
+  if (!stats) return;
+  document.getElementById('statBlogs').textContent = stats.blogs;
+  document.getElementById('statEnquiries').textContent = stats.enquiries;
+  document.getElementById('statFaqs').textContent = stats.faqs;
+  document.getElementById('statUsers').textContent = stats.users;
+  if (stats.newEnquiries > 0) {
+    document.getElementById('statNewEnq').textContent = `↑ ${stats.newEnquiries} new`;
+  } else {
+    document.getElementById('statNewEnq').textContent = 'No new enquiries';
+    document.getElementById('statNewEnq').style.color = '';
+  }
+}
+
+loadStats();
+</script>
+</body>
+</html>

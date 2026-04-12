@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blogs - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">Blogs</h1>
+      <div class="filter-bar">
+        <input type="text" id="blogSearch" placeholder="Search blogs..." style="flex:1;max-width:300px;" oninput="filterTable()">
+        <select id="blogStatusFilter" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option value="Published">Published</option>
+          <option value="Draft">Draft</option>
+        </select>
+        <button class="btn-add" onclick="openModal()">+ New Blog</button>
+      </div>
+      <div class="data-table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Title</th><th>Author</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="blogTableBody"></tbody>
+        </table>
+        <div class="pagination"><span id="blogCount">Loading...</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="blogModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modalTitle">New Blog Post</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="settings-field"><label>Title</label><input type="text" id="blogTitle" placeholder="Blog post title..."></div>
+      <div class="settings-field"><label>Content</label><textarea id="blogContent" placeholder="Write your content here..."></textarea></div>
+      <div class="settings-field"><label>Author</label><input type="text" id="blogAuthor" placeholder="Author name" value="Admin"></div>
+      <div class="settings-field"><label>Status</label>
+        <select id="blogStatus"><option>Draft</option><option>Published</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="blogSaveBtn" onclick="saveBlog()">Save Post</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Blogs'); buildHeader();
+let allBlogs = [];
+
+async function loadBlogs() {
+  showTableLoading('blogTableBody');
+  try {
+    allBlogs = await dbGetAll('blogs');
+    renderTable(allBlogs);
+  } catch(e) { showTableEmpty('blogTableBody', 'Failed to load blogs.'); }
+}
+
+function renderTable(blogs) {
+  const tbody = document.getElementById('blogTableBody');
+  document.getElementById('blogCount').textContent = `Showing ${blogs.length} record(s)`;
+  if (!blogs.length) { showTableEmpty('blogTableBody', 'No blog posts yet. Click "+ New Blog" to create one.'); return; }
+  tbody.innerHTML = blogs.map((b, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${b.title || '—'}</strong></td>
+      <td>${b.author || 'Admin'}</td>
+      <td><span class="badge ${b.status === 'Published' ? 'badge-green' : 'badge-yellow'}">${b.status || 'Draft'}</span></td>
+      <td>${formatDate(b.createdAt)}</td>
+      <td class="table-actions">
+        <button class="btn-icon" onclick="editBlog('${b.id}')">✏️ Edit</button>
+        <button class="btn-icon danger" onclick="deleteBlog('${b.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('blogSearch').value.toLowerCase();
+  const status = document.getElementById('blogStatusFilter').value;
+  const filtered = allBlogs.filter(b =>
+    (!q || (b.title||'').toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q)) &&
+    (!status || b.status === status)
+  );
+  renderTable(filtered);
+}
+
+function openModal(blog = null) {
+  document.getElementById('editId').value = blog ? blog.id : '';
+  document.getElementById('modalTitle').textContent = blog ? 'Edit Blog Post' : 'New Blog Post';
+  document.getElementById('blogTitle').value = blog ? blog.title : '';
+  document.getElementById('blogContent').value = blog ? blog.content : '';
+  document.getElementById('blogAuthor').value = blog ? blog.author : 'Admin';
+  document.getElementById('blogStatus').value = blog ? blog.status : 'Draft';
+  document.getElementById('blogModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('blogModal').classList.remove('open'); }
+
+async function editBlog(id) {
+  const blog = allBlogs.find(b => b.id === id);
+  if (blog) openModal(blog);
+}
+
+async function saveBlog() {
+  const btn = document.getElementById('blogSaveBtn');
+  const title = document.getElementById('blogTitle').value.trim();
+  if (!title) { showToast('Title is required', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const data = {
+      title,
+      content: document.getElementById('blogContent').value.trim(),
+      author: document.getElementById('blogAuthor').value.trim() || 'Admin',
+      status: document.getElementById('blogStatus').value,
+    };
+    const id = document.getElementById('editId').value;
+    if (id) await dbUpdate('blogs', id, data);
+    else await dbAdd('blogs', data);
+    showToast(id ? 'Blog updated!' : 'Blog post created!');
+    closeModal();
+    loadBlogs();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save Post';
+}
+
+async function deleteBlog(id) {
+  if (!confirm('Delete this blog post?')) return;
+  try { await dbDelete('blogs', id); showToast('Blog deleted'); loadBlogs(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+loadBlogs();
+</script>
+</body>
+</html>

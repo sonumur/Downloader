@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">Settings</h1>
+
+      <!-- Site Settings -->
+      <div class="settings-card">
+        <div class="settings-card-header">Site Settings</div>
+        <div class="settings-card-body">
+          <div class="settings-row">
+            <div class="settings-field"><label>Site Name</label><input type="text" id="siteName" placeholder="Your site name"></div>
+            <div class="settings-field"><label>Site URL</label><input type="text" id="siteUrl" placeholder="https://example.com"></div>
+          </div>
+          <div class="settings-field"><label>Site Description</label><textarea id="siteDesc" placeholder="Brief description..."></textarea></div>
+          <div class="settings-row">
+            <div class="settings-field"><label>Contact Email</label><input type="email" id="contactEmail" placeholder="admin@example.com"></div>
+            <div class="settings-field"><label>Support Email</label><input type="email" id="supportEmail" placeholder="support@example.com"></div>
+          </div>
+        </div>
+        <div class="settings-footer"><button class="btn-save" onclick="saveSection('site')">Save Changes</button></div>
+      </div>
+
+      <!-- SEO Settings -->
+      <div class="settings-card">
+        <div class="settings-card-header">SEO Settings</div>
+        <div class="settings-card-body">
+          <div class="settings-field"><label>Meta Title</label><input type="text" id="metaTitle" placeholder="My Site - Best Downloader"></div>
+          <div class="settings-field"><label>Meta Description</label><textarea id="metaDesc" placeholder="Page description for search engines..."></textarea></div>
+          <div class="settings-row">
+            <div class="settings-field"><label>Google Analytics ID</label><input type="text" id="gaId" placeholder="G-XXXXXXXXXX"></div>
+            <div class="settings-field"><label>Google AdSense ID</label><input type="text" id="adsenseId" placeholder="ca-pub-XXXXXX"></div>
+          </div>
+        </div>
+        <div class="settings-footer"><button class="btn-save" onclick="saveSection('seo')">Save Changes</button></div>
+      </div>
+
+      <!-- Feature Toggles -->
+      <div class="settings-card">
+        <div class="settings-card-header">Feature Toggles</div>
+        <div class="settings-card-body">
+          <div class="toggle-label"><div class="toggle-text"><h4>YouTube Downloads</h4><p>Enable downloading YouTube videos</p></div><label class="toggle"><input type="checkbox" id="toggleYoutube" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-label"><div class="toggle-text"><h4>TikTok Downloads</h4><p>Enable downloading TikTok videos</p></div><label class="toggle"><input type="checkbox" id="toggleTiktok" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-label"><div class="toggle-text"><h4>Instagram Downloads</h4><p>Enable downloading Instagram content</p></div><label class="toggle"><input type="checkbox" id="toggleInstagram" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-label"><div class="toggle-text"><h4>Facebook Downloads</h4><p>Enable downloading Facebook videos</p></div><label class="toggle"><input type="checkbox" id="toggleFacebook" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-label"><div class="toggle-text"><h4>Maintenance Mode</h4><p>Show maintenance page to site visitors</p></div><label class="toggle"><input type="checkbox" id="toggleMaintenance"><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="settings-footer"><button class="btn-save" onclick="saveSection('features')">Save Changes</button></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Settings'); buildHeader();
+
+async function initSettings() {
+  const s = await loadSettings();
+  if (!s) return;
+  // Site
+  if (s.siteName) document.getElementById('siteName').value = s.siteName;
+  if (s.siteUrl) document.getElementById('siteUrl').value = s.siteUrl;
+  if (s.siteDesc) document.getElementById('siteDesc').value = s.siteDesc;
+  if (s.contactEmail) document.getElementById('contactEmail').value = s.contactEmail;
+  if (s.supportEmail) document.getElementById('supportEmail').value = s.supportEmail;
+  // SEO
+  if (s.metaTitle) document.getElementById('metaTitle').value = s.metaTitle;
+  if (s.metaDesc) document.getElementById('metaDesc').value = s.metaDesc;
+  if (s.gaId) document.getElementById('gaId').value = s.gaId;
+  if (s.adsenseId) document.getElementById('adsenseId').value = s.adsenseId;
+  // Toggles
+  if (s.features) {
+    document.getElementById('toggleYoutube').checked = s.features.youtube !== false;
+    document.getElementById('toggleTiktok').checked = s.features.tiktok !== false;
+    document.getElementById('toggleInstagram').checked = s.features.instagram !== false;
+    document.getElementById('toggleFacebook').checked = s.features.facebook !== false;
+    document.getElementById('toggleMaintenance').checked = !!s.features.maintenance;
+  }
+}
+
+async function saveSection(section) {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    let data = {};
+    if (section === 'site') {
+      data = {
+        siteName: document.getElementById('siteName').value.trim(),
+        siteUrl: document.getElementById('siteUrl').value.trim(),
+        siteDesc: document.getElementById('siteDesc').value.trim(),
+        contactEmail: document.getElementById('contactEmail').value.trim(),
+        supportEmail: document.getElementById('supportEmail').value.trim(),
+      };
+    } else if (section === 'seo') {
+      data = {
+        metaTitle: document.getElementById('metaTitle').value.trim(),
+        metaDesc: document.getElementById('metaDesc').value.trim(),
+        gaId: document.getElementById('gaId').value.trim(),
+        adsenseId: document.getElementById('adsenseId').value.trim(),
+      };
+    } else if (section === 'features') {
+      data = {
+        features: {
+          youtube: document.getElementById('toggleYoutube').checked,
+          tiktok: document.getElementById('toggleTiktok').checked,
+          instagram: document.getElementById('toggleInstagram').checked,
+          facebook: document.getElementById('toggleFacebook').checked,
+          maintenance: document.getElementById('toggleMaintenance').checked,
+        }
+      };
+    }
+    await saveSettings(data);
+    showToast('Settings saved successfully!');
+    btn.textContent = '✓ Saved';
+    btn.style.background = '#16a34a';
+  } catch(e) {
+    showToast('Error saving: ' + e.message, 'error');
+    btn.textContent = 'Save Changes';
+  }
+  btn.disabled = false;
+  setTimeout(() => { btn.textContent = 'Save Changes'; btn.style.background = ''; }, 2500);
+}
+
+initSettings();
+</script>
+</body>
+</html>

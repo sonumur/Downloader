@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pages - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">Pages</h1>
+      <div class="filter-bar">
+        <input type="text" id="pageSearch" placeholder="Search pages..." style="flex:1;max-width:300px;" oninput="filterTable()">
+        <button class="btn-add" onclick="openModal()">+ New Page</button>
+      </div>
+      <div class="data-table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Title</th><th>Slug</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr></thead>
+          <tbody id="pageTableBody"></tbody>
+        </table>
+        <div class="pagination"><span id="pageCount">Loading...</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pageModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modalTitle">New Page</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="settings-field"><label>Title</label><input type="text" id="pageTitle" placeholder="Page title..."></div>
+      <div class="settings-field"><label>Slug</label><input type="text" id="pageSlug" placeholder="/my-page"></div>
+      <div class="settings-field"><label>Content</label><textarea id="pageContent" placeholder="Page content..."></textarea></div>
+      <div class="settings-field"><label>Status</label>
+        <select id="pageStatus"><option>Draft</option><option>Published</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="pageSaveBtn" onclick="savePage()">Save Page</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Pages'); buildHeader();
+let allPages = [];
+
+async function loadPages() {
+  showTableLoading('pageTableBody');
+  try { allPages = await dbGetAll('pages'); renderTable(allPages); }
+  catch(e) { showTableEmpty('pageTableBody', 'Failed to load pages.'); }
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('pageTableBody');
+  document.getElementById('pageCount').textContent = `Showing ${list.length} record(s)`;
+  if (!list.length) { showTableEmpty('pageTableBody', 'No pages yet.'); return; }
+  tbody.innerHTML = list.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${p.title || '—'}</strong></td>
+      <td><code style="font-size:0.8rem;background:#f3f4f6;padding:2px 6px;border-radius:4px;">${p.slug || '—'}</code></td>
+      <td><span class="badge ${p.status === 'Published' ? 'badge-green' : 'badge-yellow'}">${p.status || 'Draft'}</span></td>
+      <td>${formatDate(p.updatedAt || p.createdAt)}</td>
+      <td class="table-actions">
+        <button class="btn-icon" onclick="editPage('${p.id}')">✏️ Edit</button>
+        <button class="btn-icon danger" onclick="deletePage('${p.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('pageSearch').value.toLowerCase();
+  renderTable(allPages.filter(p => (!q || (p.title||'').toLowerCase().includes(q) || (p.slug||'').toLowerCase().includes(q))));
+}
+
+function openModal(page = null) {
+  document.getElementById('editId').value = page ? page.id : '';
+  document.getElementById('modalTitle').textContent = page ? 'Edit Page' : 'New Page';
+  document.getElementById('pageTitle').value = page ? page.title : '';
+  document.getElementById('pageSlug').value = page ? page.slug : '';
+  document.getElementById('pageContent').value = page ? page.content : '';
+  document.getElementById('pageStatus').value = page ? page.status : 'Draft';
+  document.getElementById('pageModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('pageModal').classList.remove('open'); }
+function editPage(id) { openModal(allPages.find(p => p.id === id)); }
+
+async function savePage() {
+  const btn = document.getElementById('pageSaveBtn');
+  const title = document.getElementById('pageTitle').value.trim();
+  if (!title) { showToast('Title is required', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const data = { title, slug: document.getElementById('pageSlug').value.trim(), content: document.getElementById('pageContent').value.trim(), status: document.getElementById('pageStatus').value };
+    const id = document.getElementById('editId').value;
+    if (id) await dbUpdate('pages', id, data); else await dbAdd('pages', data);
+    showToast(id ? 'Page updated!' : 'Page created!');
+    closeModal(); loadPages();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save Page';
+}
+
+async function deletePage(id) {
+  if (!confirm('Delete this page?')) return;
+  try { await dbDelete('pages', id); showToast('Page deleted'); loadPages(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+loadPages();
+</script>
+</body>
+</html>

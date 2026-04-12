@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enquiries - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">Enquiries</h1>
+      <div class="filter-bar">
+        <input type="text" id="enquirySearch" placeholder="Search enquiries..." style="flex:1;max-width:300px;" oninput="filterTable()">
+        <select id="enquiryStatusFilter" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option value="New">New</option>
+          <option value="Read">Read</option>
+          <option value="Replied">Replied</option>
+        </select>
+      </div>
+      <div class="data-table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Subject</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="enquiryTableBody"></tbody>
+        </table>
+        <div class="pagination"><span id="enquiryCount">Loading...</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="enquiryModal">
+  <div class="modal">
+    <div class="modal-header"><h3>Enquiry Details</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="viewId">
+      <div class="settings-field"><label>From</label><p id="viewName" style="padding:0.5rem 0;font-weight:500;"></p></div>
+      <div class="settings-field"><label>Email</label><p id="viewEmail" style="padding:0.5rem 0;color:#6b7280;"></p></div>
+      <div class="settings-field"><label>Subject</label><p id="viewSubject" style="padding:0.5rem 0;font-weight:500;"></p></div>
+      <div class="settings-field"><label>Message</label><p id="viewMessage" style="padding:0.5rem 0;line-height:1.7;color:#374151;"></p></div>
+      <div class="settings-field"><label>Status</label>
+        <select id="viewStatus"><option>New</option><option>Read</option><option>Replied</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Close</button>
+      <button class="btn-save" onclick="updateStatus()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Enquiries'); buildHeader();
+let allEnquiries = [];
+
+async function loadEnquiries() {
+  showTableLoading('enquiryTableBody');
+  try {
+    allEnquiries = await dbGetAll('enquiries');
+    renderTable(allEnquiries);
+  } catch(e) { showTableEmpty('enquiryTableBody', 'Failed to load enquiries.'); }
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('enquiryTableBody');
+  document.getElementById('enquiryCount').textContent = `Showing ${list.length} record(s)`;
+  if (!list.length) { showTableEmpty('enquiryTableBody', 'No enquiries yet.'); return; }
+  const badgeMap = { 'New': 'badge-red', 'Read': 'badge-yellow', 'Replied': 'badge-green' };
+  tbody.innerHTML = list.map((e, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${e.name || '—'}</td>
+      <td>${e.email || '—'}</td>
+      <td>${e.subject || '—'}</td>
+      <td><span class="badge ${badgeMap[e.status] || 'badge-gray'}">${e.status || 'New'}</span></td>
+      <td>${formatDate(e.createdAt)}</td>
+      <td class="table-actions">
+        <button class="btn-icon" onclick="viewEnquiry('${e.id}')">👁️ View</button>
+        <button class="btn-icon danger" onclick="deleteEnquiry('${e.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('enquirySearch').value.toLowerCase();
+  const status = document.getElementById('enquiryStatusFilter').value;
+  renderTable(allEnquiries.filter(e =>
+    (!q || [e.name, e.email, e.subject].some(f => (f||'').toLowerCase().includes(q))) &&
+    (!status || e.status === status)
+  ));
+}
+
+function viewEnquiry(id) {
+  const e = allEnquiries.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('viewId').value = id;
+  document.getElementById('viewName').textContent = e.name || '—';
+  document.getElementById('viewEmail').textContent = e.email || '—';
+  document.getElementById('viewSubject').textContent = e.subject || '—';
+  document.getElementById('viewMessage').textContent = e.message || '—';
+  document.getElementById('viewStatus').value = e.status || 'New';
+  document.getElementById('enquiryModal').classList.add('open');
+  // Auto-mark as read
+  if (e.status === 'New') dbUpdate('enquiries', id, { status: 'Read' }).then(loadEnquiries);
+}
+
+function closeModal() { document.getElementById('enquiryModal').classList.remove('open'); }
+
+async function updateStatus() {
+  const id = document.getElementById('viewId').value;
+  const status = document.getElementById('viewStatus').value;
+  try { await dbUpdate('enquiries', id, { status }); showToast('Status updated'); closeModal(); loadEnquiries(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteEnquiry(id) {
+  if (!confirm('Delete this enquiry?')) return;
+  try { await dbDelete('enquiries', id); showToast('Enquiry deleted'); loadEnquiries(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+loadEnquiries();
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQs - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">FAQs</h1>
+      <div class="filter-bar">
+        <input type="text" id="faqSearch" placeholder="Search FAQs..." style="flex:1;max-width:300px;" oninput="filterTable()">
+        <select id="faqCatFilter" onchange="filterTable()">
+          <option value="">All Categories</option>
+          <option value="General">General</option>
+          <option value="Technical">Technical</option>
+          <option value="Pricing">Pricing</option>
+        </select>
+        <button class="btn-add" onclick="openModal()">+ New FAQ</button>
+      </div>
+      <div class="data-table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Question</th><th>Category</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="faqTableBody"></tbody>
+        </table>
+        <div class="pagination"><span id="faqCount">Loading...</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="faqModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modalTitle">New FAQ</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="settings-field"><label>Question</label><input type="text" id="faqQuestion" placeholder="Enter the question..."></div>
+      <div class="settings-field"><label>Answer</label><textarea id="faqAnswer" placeholder="Enter the answer..."></textarea></div>
+      <div class="settings-field"><label>Category</label>
+        <select id="faqCat"><option>General</option><option>Technical</option><option>Pricing</option></select>
+      </div>
+      <div class="settings-field"><label>Status</label>
+        <select id="faqStatus"><option>Active</option><option>Draft</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="faqSaveBtn" onclick="saveFaq()">Save FAQ</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('FAQs'); buildHeader();
+let allFaqs = [];
+
+async function loadFaqs() {
+  showTableLoading('faqTableBody');
+  try { allFaqs = await dbGetAll('faqs'); renderTable(allFaqs); }
+  catch(e) { showTableEmpty('faqTableBody', 'Failed to load FAQs.'); }
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('faqTableBody');
+  document.getElementById('faqCount').textContent = `Showing ${list.length} record(s)`;
+  if (!list.length) { showTableEmpty('faqTableBody', 'No FAQs yet. Click "+ New FAQ" to add.'); return; }
+  tbody.innerHTML = list.map((f, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${f.question || '—'}</td>
+      <td><span class="badge badge-gray">${f.category || 'General'}</span></td>
+      <td><span class="badge ${f.status === 'Active' ? 'badge-green' : 'badge-yellow'}">${f.status || 'Active'}</span></td>
+      <td>${formatDate(f.createdAt)}</td>
+      <td class="table-actions">
+        <button class="btn-icon" onclick="editFaq('${f.id}')">✏️ Edit</button>
+        <button class="btn-icon danger" onclick="deleteFaq('${f.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('faqSearch').value.toLowerCase();
+  const cat = document.getElementById('faqCatFilter').value;
+  renderTable(allFaqs.filter(f =>
+    (!q || (f.question||'').toLowerCase().includes(q) || (f.answer||'').toLowerCase().includes(q)) &&
+    (!cat || f.category === cat)
+  ));
+}
+
+function openModal(faq = null) {
+  document.getElementById('editId').value = faq ? faq.id : '';
+  document.getElementById('modalTitle').textContent = faq ? 'Edit FAQ' : 'New FAQ';
+  document.getElementById('faqQuestion').value = faq ? faq.question : '';
+  document.getElementById('faqAnswer').value = faq ? faq.answer : '';
+  document.getElementById('faqCat').value = faq ? faq.category : 'General';
+  document.getElementById('faqStatus').value = faq ? faq.status : 'Active';
+  document.getElementById('faqModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('faqModal').classList.remove('open'); }
+
+function editFaq(id) { openModal(allFaqs.find(f => f.id === id)); }
+
+async function saveFaq() {
+  const btn = document.getElementById('faqSaveBtn');
+  const question = document.getElementById('faqQuestion').value.trim();
+  if (!question) { showToast('Question is required', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const data = { question, answer: document.getElementById('faqAnswer').value.trim(), category: document.getElementById('faqCat').value, status: document.getElementById('faqStatus').value };
+    const id = document.getElementById('editId').value;
+    if (id) await dbUpdate('faqs', id, data); else await dbAdd('faqs', data);
+    showToast(id ? 'FAQ updated!' : 'FAQ created!');
+    closeModal(); loadFaqs();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save FAQ';
+}
+
+async function deleteFaq(id) {
+  if (!confirm('Delete this FAQ?')) return;
+  try { await dbDelete('faqs', id); showToast('FAQ deleted'); loadFaqs(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+loadFaqs();
+</script>
+</body>
+</html>

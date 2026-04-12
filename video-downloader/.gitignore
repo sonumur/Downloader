@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment variables - NEVER commit this
+.env
+
+# Temp download files
+temp/
+
+# Log files
+*.log
+server.log
+
+# Debug & test scripts
+check_api.js
+debug_formats_script.js
+diagnostic.js
+probe_formats.js
+test_*.js
+update_links.js
+
+# Raw data dumps
+*.json
+!package.json
+!package-lock.json
+
+# Test media files
+*.webm
+*.mp4
+*.mp3

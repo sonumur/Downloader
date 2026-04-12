@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users - Downloader Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-extended.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar"><div class="sidebar-header"><h2>Downloader</h2></div><nav class="sidebar-nav" id="adminSidebarNav"></nav></aside>
+  <div class="main-wrapper">
+    <header class="top-header" id="adminTopHeader"><div class="user-avatar">A</div></header>
+    <main class="main-content">
+      <h1 class="page-title">Users</h1>
+      <div class="filter-bar">
+        <input type="text" id="userSearch" placeholder="Search users..." style="flex:1;max-width:300px;" oninput="filterTable()">
+        <select id="userRoleFilter" onchange="filterTable()">
+          <option value="">All Roles</option>
+          <option value="Admin">Admin</option>
+          <option value="User">User</option>
+        </select>
+        <button class="btn-add" onclick="openModal()">+ New User</button>
+      </div>
+      <div class="data-table-wrapper">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+        <div class="pagination"><span id="userCount">Loading...</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modalTitle">New User</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="settings-field"><label>Name</label><input type="text" id="userName" placeholder="Full name"></div>
+      <div class="settings-field"><label>Email</label><input type="email" id="userEmail" placeholder="user@example.com"></div>
+      <div class="settings-field"><label>Role</label>
+        <select id="userRole"><option>User</option><option>Admin</option></select>
+      </div>
+      <div class="settings-field"><label>Status</label>
+        <select id="userStatus"><option>Active</option><option>Inactive</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="userSaveBtn" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/db.js"></script>
+<script>
+buildSidebar('Users'); buildHeader();
+let allUsers = [];
+
+async function loadUsers() {
+  showTableLoading('userTableBody');
+  try { allUsers = await dbGetAll('users'); renderTable(allUsers); }
+  catch(e) { showTableEmpty('userTableBody', 'Failed to load users.'); }
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('userTableBody');
+  document.getElementById('userCount').textContent = `Showing ${list.length} record(s)`;
+  if (!list.length) { showTableEmpty('userTableBody', 'No users yet.'); return; }
+  tbody.innerHTML = list.map((u, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${u.name || '—'}</td>
+      <td>${u.email || '—'}</td>
+      <td><span class="badge ${u.role === 'Admin' ? 'badge-red' : 'badge-gray'}">${u.role || 'User'}</span></td>
+      <td><span class="badge ${u.status === 'Active' ? 'badge-green' : 'badge-yellow'}">${u.status || 'Active'}</span></td>
+      <td>${formatDate(u.createdAt)}</td>
+      <td class="table-actions">
+        <button class="btn-icon" onclick="editUser('${u.id}')">✏️ Edit</button>
+        <button class="btn-icon danger" onclick="deleteUser('${u.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  const role = document.getElementById('userRoleFilter').value;
+  renderTable(allUsers.filter(u =>
+    (!q || [u.name, u.email].some(f => (f||'').toLowerCase().includes(q))) &&
+    (!role || u.role === role)
+  ));
+}
+
+function openModal(user = null) {
+  document.getElementById('editId').value = user ? user.id : '';
+  document.getElementById('modalTitle').textContent = user ? 'Edit User' : 'New User';
+  document.getElementById('userName').value = user ? user.name : '';
+  document.getElementById('userEmail').value = user ? user.email : '';
+  document.getElementById('userRole').value = user ? user.role : 'User';
+  document.getElementById('userStatus').value = user ? user.status : 'Active';
+  document.getElementById('userEmail').disabled = !!user; // can't change email after creation
+  document.getElementById('userModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('userModal').classList.remove('open'); }
+function editUser(id) { openModal(allUsers.find(u => u.id === id)); }
+
+async function saveUser() {
+  const btn = document.getElementById('userSaveBtn');
+  const name = document.getElementById('userName').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  if (!name || !email) { showToast('Name and email are required', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const data = { name, email, role: document.getElementById('userRole').value, status: document.getElementById('userStatus').value };
+    const id = document.getElementById('editId').value;
+    if (id) await dbUpdate('users', id, data); else await dbAdd('users', data);
+    showToast(id ? 'User updated!' : 'User created!');
+    closeModal(); loadUsers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save User';
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user record?')) return;
+  try { await dbDelete('users', id); showToast('User deleted'); loadUsers(); }
+  catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+loadUsers();
+</script>
+</body>
+</html>
