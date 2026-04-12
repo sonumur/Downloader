@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Downloader - Download Instagram Reels, Photos & IGTV | downloader.online</title>
+    <title>Instagram Reels Downloader - Fast & Free Reels Saver | downloader.online</title>
     <meta name="description"
-        content="Fast and free Instagram downloader. Save Instagram Reels, Photos, and IGTV videos in HD quality instantly with downloader.online.">
+        content="Download Instagram Reels in HD quality for free. Fast, secure, and easy to use Instagram Reels downloader tool by downloader.online.">
     <meta name="keywords"
-        content="instagram downloader, download instagram reels, instagram photo downloader, save instagram videos, igtv downloader, instagram reels saver, downloader.online">
+        content="instagram reels downloader, download instagram reels, save instagram reels, reels saver, instagram video downloader, downloader.online">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
@@ -35,7 +35,7 @@
     <main class="main-content">
         <!-- Hero Search -->
         <section class="hero-section">
-            <h1 class="hero-title">Instagram Downloader</h1>
+            <h1 class="hero-title">Instagram Reels Downloader</h1>
             <p class="hero-subtitle">Fast & Free downloads from Instagram, TikTok, Facebook, Twitter.</p>
 
             <div class="feature-icons-container">
@@ -130,7 +130,7 @@
 
             <div class="search-wrapper">
                 <div class="search-box">
-                    <input type="text" id="url" placeholder="Paste Instagram link here">
+                    <input type="text" id="url" placeholder="Paste Instagram Reel link here">
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
@@ -175,12 +175,12 @@
         <!-- Features & Info Section -->
         <section class="info-section">
             <div class="info-content">
-                <h2>How to download online videos?</h2>
+                <h2>How to download Instagram Reels?</h2>
                 <div class="steps-grid">
                     <div class="step-card">
                         <div class="step-num">1</div>
-                        <h3>Copy the Instagram URL</h3>
-                        <p>Copy the Reels, Photo, or IGTV link from the Instagram app or website.</p>
+                        <h3>Copy the Reel URL</h3>
+                        <p>Copy the Reels link from the Instagram app or website.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-num">2</div>
@@ -189,42 +189,26 @@
                     </div>
                     <div class="step-card">
                         <div class="step-num">3</div>
-                        <h3>Save the Video</h3>
-                        <p>Choose your preferred quality format (MP4 or MP3) and the download will start!</p>
+                        <h3>Save the Reel</h3>
+                        <p>Choose your preferred quality format and the download will start!</p>
                     </div>
                 </div>
 
                 <div class="features-divider"></div>
 
                 <div class="seo-content">
-                    <h2>The Best Instagram Downloader Online</h2>
-                    <p>downloader.online provides a seamless way to download Instagram content. Whether it's a stunning
-                        Photo, a viral Reel, or a long-form IGTV video, our tool extracts the highest quality available
-                        so you can save it to your device instantly.</p>
+                    <h2>The Best Instagram Reels Downloader Online</h2>
+                    <p>downloader.online provides a seamless way to download Instagram Reels. Our tool extracts the highest quality available
+                        so you can save it to your device instantly without any watermarks.</p>
 
-                    <h2>Why choose downloader.online?</h2>
-                    <p>With countless video downloader tools available, finding one that is pristine, fast, and
-                        constantly updated can be difficult. downloader.online solves this by doing the complex media
-                        processing entirely on our dedicated backend computing engines.</p>
+                    <h2>Why choose our Reels Downloader?</h2>
+                    <p>downloader.online is optimized specifically for Reels, ensuring fast processing and high-definition results every time.</p>
                     <ul>
-                        <li><strong>Absolutely no software installation:</strong> You don't need to install any
-                            suspicious desktop applications. Everything works natively in your web browser.</li>
-                        <li><strong>Free forever with no limits:</strong> Convert and download as many videos as you'd
-                            like. There are no paywalls or hidden membership fees.</li>
-                        <li><strong>Ultimate High-Definition Quality:</strong> We automatically extract and combine the
-                            absolute highest maximum resolution available directly from the source servers, including
-                            720p, 1080p, 2K, and 4K resolutions.</li>
-                        <li><strong>Cross-Platform Compatibility:</strong> Access downloader.online flawlessly on your
-                            PC,
-                            Windows, Mac, Android smartphone, or Apple iOS iPhone device.</li>
+                        <li><strong>Absolutely no software installation:</strong> Works natively in your web browser.</li>
+                        <li><strong>Free forever with no limits:</strong> Download as many Reels as you'd like.</li>
+                        <li><strong>HD Quality:</strong> Save Reels in their original resolution.</li>
+                        <li><strong>Cross-Platform:</strong> Works on Windows, Mac, Android, and iOS.</li>
                     </ul>
-
-                    <h2>Download Videos Without Watermarks</h2>
-                    <p>Unlike other downloaders that fail, restrict your downloads, or embed their own logos, our tool
-                        returns the source media exactly as the creator uploaded it. Simply copy the link from your
-                        favorite app (click Share > Copy Link), paste it securely into our search bar at the very top of
-                        this page, and select the exact video or audio format you desire. Our system instantly proxies
-                        the media and begins your download.</p>
                 </div>
             </div>
         </section>
@@ -274,12 +258,12 @@
         async function fetchFormats() {
             const url = urlInput.value.trim();
             if (!url) {
-                showStatus('Please paste a video URL.', true);
+                showStatus('Please paste a Reels URL.', true);
                 return;
             }
 
             try {
-                showStatus('Analyzing video...');
+                showStatus('Analyzing Reels...');
                 downloadBtn.disabled = true;
                 videoCard.style.display = 'none';
 
@@ -312,10 +296,9 @@
             } else {
                 thumbnail.style.display = 'none';
             }
-            videoTitle.textContent = data.title || "Video Download";
+            videoTitle.textContent = data.title || "Reels Download";
             videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
-            // Populate formats
             formatSelect.innerHTML = '';
             const allFormats = [...data.formats.video, ...data.formats.audio];
 
@@ -365,7 +348,6 @@
                 }
 
                 showStatus('Download ready!');
-                // Trigger browser download
                 window.location.href = data.video;
             } catch (err) {
                 showStatus('Download failed.', true);
