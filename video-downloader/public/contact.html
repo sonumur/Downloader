@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - downloader.online</title>
+    <meta name="description"
+        content="Contact the downloader.online team for any questions or support regarding our video downloader service.">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo-link">
+                <img src="logo.png" alt="downloader.online Logo" class="logo-img">
+                <span class="logo-text">downloader.online</span>
+            </a>
+            <button id="mobileMenuToggle" class="mobile-menu-toggle" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+            <nav class="header-nav">
+                <a href="/how-to-use">How to Use</a>
+                <a href="/platforms">Platforms</a>
+                <a href="/contact">Contact Us</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Contact Us Section -->
+        <section style="padding:4rem 1rem;">
+            <div style="max-width:680px; margin:0 auto;">
+                <h1 style="text-align:center; font-size:2.5rem; font-weight:700; margin-bottom:0.5rem; color:#111;">Contact Us</h1>
+                <p style="text-align:center; color:#6b7280; margin-bottom:2rem; font-size:1.1rem;">Have a question or issue? Drop us a message and we'll get back to you.</p>
+
+                <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:2rem; box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+                    <div id="contactSuccess" style="display:none; background:#dcfce7; color:#16a34a; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1rem; font-weight:500;"></div>
+                    <div id="contactError" style="display:none; background:#fee2e2; color:#dc2626; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1rem; font-weight:500;"></div>
+
+                    <form id="contactForm">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                            <div>
+                                <label style="display:block; font-size:0.875rem; font-weight:500; margin-bottom:0.4rem; color:#374151;">Name <span style="color:#dc2626;">*</span></label>
+                                <input type="text" id="contactName" placeholder="Your name" required
+                                    style="width:100%; padding:0.65rem 1rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; outline:none; font-family:inherit; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.875rem; font-weight:500; margin-bottom:0.4rem; color:#374151;">Email <span style="color:#dc2626;">*</span></label>
+                                <input type="email" id="contactEmail" placeholder="you@example.com" required
+                                    style="width:100%; padding:0.65rem 1rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; outline:none; font-family:inherit; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; font-size:0.875rem; font-weight:500; margin-bottom:0.4rem; color:#374151;">Subject</label>
+                            <input type="text" id="contactSubject" placeholder="What is this about?"
+                                style="width:100%; padding:0.65rem 1rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; outline:none; font-family:inherit; box-sizing:border-box;">
+                        </div>
+                        <div style="margin-bottom:1.5rem;">
+                            <label style="display:block; font-size:0.875rem; font-weight:500; margin-bottom:0.4rem; color:#374151;">Message <span style="color:#dc2626;">*</span></label>
+                            <textarea id="contactMessage" placeholder="Describe your question or issue..." required rows="5"
+                                style="width:100%; padding:0.65rem 1rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; outline:none; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
+                        </div>
+                        <button type="submit" id="contactSubmitBtn"
+                            style="width:100%; background:#000; color:white; border:none; padding:0.875rem; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; transition:background 0.2s;">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 downloader.online. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="dmca">DMCA</a>
+                <a href="privacy-policy">Privacy Policy</a>
+                <a href="terms-of-service">Terms of Service</a>
+                <a href="contact">Contact Us</a>
+                <a href="/">Home</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="mobile-nav.js"></script>
+    <!-- Firebase SDKs (for Contact Form) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="/admin/js/firebase-config.js"></script>
+    <script src="contact.js"></script>
+</body>
+
+</html>

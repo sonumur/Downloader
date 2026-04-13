@@ -15,14 +15,43 @@ function buildSidebar(activePage) {
   nav.innerHTML = navItems.map(item => `
     <a href="${item.href}" class="nav-item ${activePage === item.label ? 'active' : ''}">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${item.icon}</svg>
-      ${item.label}
+      <span class="nav-item-text">${item.label}</span>
     </a>
   `).join('');
+
+  // Add overlay if it doesn't exist
+  if (!document.querySelector('.sidebar-overlay')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    overlay.onclick = toggleSidebar;
+    document.body.appendChild(overlay);
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('active');
 }
 
 function buildHeader() {
   const header = document.getElementById('adminTopHeader');
   if (!header) return;
+
+  // Add toggle button if it doesn't exist
+  if (!header.querySelector('.sidebar-toggle')) {
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'sidebar-toggle';
+    toggleBtn.innerHTML = `
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+      </svg>
+    `;
+    toggleBtn.onclick = toggleSidebar;
+    header.prepend(toggleBtn);
+  }
+
   // Show user initials from Firebase if logged in
   if (window.firebase && firebase.apps.length) {
     firebase.auth().onAuthStateChanged(user => {
@@ -34,3 +63,8 @@ function buildHeader() {
     });
   }
 }
+
+// Automatically build header on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+  buildHeader();
+});
