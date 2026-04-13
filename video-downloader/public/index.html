@@ -407,11 +407,12 @@
             allFormats.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
+                opt.dataset.type = f.type; // Store type
                 let typeLabel = 'MP4';
-                if (f.type === 'audio') typeLabel = 'MP3 (Song)';
+                if (f.type === 'audio') typeLabel = 'MP3';
                 if (f.type === 'photo') typeLabel = 'PHOTO';
 
-                const qualityLabel = (f.quality && f.quality !== 'Standard') ? f.quality : (f.format || 'Best');
+                const qualityLabel = f.quality || f.resolution || 'Unknown';
                 const sizeLabel = f.size ? ` (${(f.size / (1024 * 1024)).toFixed(1)}MB)` : '';
                 opt.textContent = `${typeLabel} ${qualityLabel} ${f.note || ''}${sizeLabel}`;
                 formatSelect.appendChild(opt);
@@ -431,12 +432,16 @@
                 showStatus('Processing download... this may take a bit.');
                 finalDownloadBtn.disabled = true;
 
+                const formatId = formatSelect.value;
+                const formatType = formatSelect.options[formatSelect.selectedIndex].dataset.type;
+
                 const res = await fetch('/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         url: urlInput.value.trim(),
                         formatId: formatId,
+                        type: formatType, // Pass type
                         videoId: currentVideoData?.videoId,
                         title: currentVideoData?.title,
                         photoUrl: currentVideoData?.formats?.video?.find(f => f.id === formatId)?.url || currentVideoData?.photoUrl

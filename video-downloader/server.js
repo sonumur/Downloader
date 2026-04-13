@@ -98,7 +98,9 @@ async function runYtDlpAsync(args, timeoutMs = 15000) {
       });
 
       lastResult = result;
-      logToFile(`Strategy ${strategy.name} result: status ${result.status}, stderr: ${result.stderr ? result.stderr.slice(0, 200).replace(/\n/g, ' ') : 'none'}`);
+      const logStderr = result.stderr ? result.stderr.slice(0, 500).replace(/\n/g, ' ') : 'none';
+      logToFile(`Strategy ${strategy.name} result: status ${result.status}, stderr: ${logStderr}`);
+      console.log(`Strategy ${strategy.name} finished with status ${result.status}`);
 
       if (result.status === 0) {
         // If listing formats, ensure we got more than just storyboards
@@ -125,6 +127,29 @@ async function runYtDlpAsync(args, timeoutMs = 15000) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ─── Security & CSP Headers ────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://www.gstatic.com https://www.google.com https://*.adtrafficquality.google",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https: http:",
+    "frame-src https://*.adtrafficquality.google https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://www.googletagmanager.com https://www.googletagservices.com",
+    "connect-src 'self' https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com",
+    "media-src 'self' blob:",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'"
+  ].join('; ');
+
+  res.setHeader('Content-Security-Policy', csp);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
 
 // Serve Firebase Config Dynamically
 app.get("/admin/js/firebase-config.js", (req, res) => {
@@ -307,9 +332,14 @@ app.post("/download", async (req, res) => {
     }
 
     // Determine if it's an audio-only request
-    const isAudioOnly = formatId === 'bestaudio' || formatId.includes('audio');
+    // IMPORTANT: Check if it's specifically an audio format OR if the user explicitly requested audio type
+    const isAudioOnly = req.body.type === 'audio' || formatId === 'bestaudio' || (formatId.includes('audio') && !formatId.includes('video') && !formatId.includes('+'));
     const ext = isAudioOnly ? 'mp3' : 'mp4';
-    const filePath = path.join(tempDir, `${isAudioOnly ? 'audio' : 'video'}_${vidId}_${formatId.replace(/[^a-zA-Z0-9+]/g, '_')}.${ext}`);
+    
+    const typeParam = isAudioOnly ? 'audio' : 'video';
+    const formatSuffix = formatId.replace(/[^a-zA-Z0-9+]/g, '_');
+    const filePath = path.join(tempDir, `${isAudioOnly ? 'audio' : 'video'}_${vidId}_${formatSuffix}.${ext}`);
+    const downloadUrl = `/video/${vidId}?format=${encodeURIComponent(formatId)}&type=${typeParam}&title=${encodeURIComponent(cleanTitle)}`;
     
     // If file exists and is recent (less than 1 hour old), reuse it
     if (fs.existsSync(filePath)) {
@@ -320,8 +350,8 @@ app.post("/download", async (req, res) => {
         console.log(`Reusing existing file: ${filePath}`);
         return res.json({ 
           success: true, 
-          video: `/video/${vidId}?format=${encodeURIComponent(formatId)}&title=${encodeURIComponent(cleanTitle)}`, 
-          message: "Download complete (reused)" 
+          video: downloadUrl, 
+          message: "Download complete" 
         });
       }
       fs.unlinkSync(filePath);
@@ -347,10 +377,10 @@ app.post("/download", async (req, res) => {
     const result = await runYtDlpAsync(ytDlpArgs);
 
     if (result.status === 0 && fs.existsSync(filePath) && fs.statSync(filePath).size > 5000) {
-      const downloadParam = isAudioOnly ? `format=mp3&type=audio` : `format=${encodeURIComponent(formatId)}`;
+      const typeParam = isAudioOnly ? 'audio' : 'video';
       return res.json({ 
         success: true, 
-        video: `/video/${vidId}?${downloadParam}&title=${encodeURIComponent(cleanTitle)}`, 
+        video: downloadUrl, 
         message: "Download complete" 
       });
     }
@@ -359,7 +389,9 @@ app.post("/download", async (req, res) => {
     throw new Error(errorMsg);
 
   } catch (error) {
-    console.error('Download Error:', error.message);
+    const errorLogMsg = `Download Error: ${error.message}${error.stack ? '\n' + error.stack : ''}`;
+    console.error(errorLogMsg);
+    logToFile(errorLogMsg);
     res.status(500).json({ success: false, message: "An error occurred while preparing your download. Please try again." });
   }
 });
@@ -402,9 +434,22 @@ app.get("/video/:videoId", (req, res) => {
   const title = req.query.title || 'video';
   const type = req.query.type || 'video';
   
-  const prefix = type === 'photo' ? 'photo' : 'video';
-  const fileNameSuffix = type === 'photo' ? '' : `_${format.replace(/[^a-zA-Z0-9+]/g, '_')}`;
-  const filePath = path.join(tempDir, `${prefix}_${videoId}${fileNameSuffix}.${format}`);
+  let prefix = 'video';
+  if (type === 'audio') prefix = 'audio';
+  if (type === 'photo') prefix = 'photo';
+  
+  const formatIdClean = format.replace(/[^a-zA-Z0-9+]/g, '_');
+  const fileNameSuffix = (type === 'photo') ? '' : `_${formatIdClean}`;
+  
+  // Determine actual file extension
+  let ext = 'mp4';
+  if (type === 'photo') {
+    ext = format === 'png' ? 'png' : 'jpg';
+  } else if (type === 'audio' || format === 'mp3') {
+    ext = 'mp3';
+  }
+
+  const filePath = path.join(tempDir, `${prefix}_${videoId}${fileNameSuffix}.${ext}`);
 
   if (fs.existsSync(filePath)) {
     let contentType = 'video/mp4';
