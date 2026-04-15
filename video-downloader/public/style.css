@@ -211,6 +211,9 @@ body {
   font-size: 1.15rem;
   outline: none;
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 
@@ -526,7 +529,7 @@ body {
   .search-box {
     flex-direction: row;
     flex-wrap: nowrap;
-    height: 64px;
+    height: 52px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
     gap: 0;
     width: 100%;
