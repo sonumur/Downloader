@@ -458,8 +458,13 @@ app.get("/video/:videoId", (req, res) => {
     } else if (type === 'audio' || format === 'mp3') {
       contentType = 'audio/mpeg';
     }
+
+    // iOS Safari saves MP4 videos with .mov extension — match the filename to what it saves
+    const userAgent = req.headers['user-agent'] || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const downloadExt = (isIOS && type === 'video') ? 'mov' : ext;
     
-    res.header('Content-Disposition', `attachment; filename="${title}.${format}"`);
+    res.header('Content-Disposition', `attachment; filename="${title}.${downloadExt}"`);
     res.header('Content-Type', contentType);
     fs.createReadStream(filePath).pipe(res);
   } else {
