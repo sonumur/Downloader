@@ -162,8 +162,8 @@ body {
 /* Hero Section */
 .hero-section {
   text-align: center;
-  margin-bottom: 2rem;
-  padding: 2.5rem 1.5rem;
+  margin-bottom: 0.5rem;
+  padding: 2.5rem 1.5rem 1rem 1.5rem;
   background: none !important;
   box-shadow: none !important;
   border: none !important;
@@ -207,8 +207,8 @@ body {
 
 /* Search Wrapper */
 .search-wrapper {
-  max-width: 720px;
-  margin: 0 auto 1rem auto;
+  max-width: 800px;
+  margin: 0 auto 1.5rem auto;
 }
 
 
@@ -280,7 +280,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 2rem;
-  margin-top: 2.5rem;
+  margin-top: 1.5rem;
   flex-wrap: wrap;
 }
 
@@ -323,7 +323,8 @@ body {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow);
-  margin-bottom: 2rem;
+  max-width: 800px;
+  margin: 0 auto 2rem auto;
 }
 
 .video-card-content {
@@ -408,30 +409,50 @@ body {
 /* Promo Card */
 .promo-card {
   background: var(--card-bg);
-  border-left: 6px solid var(--primary);
-  border-radius: 8px;
-  padding: 1.5rem 2rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 2.5rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  box-shadow: var(--shadow);
+  gap: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  max-width: 800px;
+  margin: 0 auto 3rem auto;
 }
 
 .promo-icon {
-  font-size: 2.5rem;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.promo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .promo-text h4 {
-  font-size: 1.15rem;
-  margin-bottom: 0.2rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #111;
+}
+
+.promo-text p {
+  color: #666;
+  font-size: 1.1rem;
 }
 
 .status {
   text-align: center;
-  margin: 1rem 0;
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 1.15rem;
+  margin: 0.5rem 0;
+  font-weight: 700;
+  color: #e63946; /* Vibrant Red */
+  font-size: 1.25rem;
 }
 
 .status.error {
@@ -440,8 +461,13 @@ body {
 
 /* SEO Info / Steps Section */
 .info-section {
-  margin-top: 4rem;
+  margin-top: 2rem;
   padding: 1rem 0;
+}
+
+.info-content {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .info-content h2 {
@@ -540,29 +566,33 @@ body {
 }
 
 .step-badge {
-  display: inline-block;
-  background: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
   color: white;
-  padding: 0.5rem 1.25rem;
+  padding: 0.6rem 1.4rem;
   border-radius: 50px;
-  font-weight: 800;
-  font-size: 0.9rem;
+  font-weight: 900;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .guide-info h3 {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   color: #111;
+  letter-spacing: -0.5px;
 }
 
 .guide-info p {
   font-size: 1.15rem;
-  color: #555;
-  line-height: 1.7;
+  color: #4b5563;
+  line-height: 1.8;
 }
 
 .guide-info strong {

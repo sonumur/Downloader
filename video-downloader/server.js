@@ -472,4 +472,20 @@ app.get("/video/:videoId", (req, res) => {
   }
 });
 
+// ─── Keep-Alive Solution for Render ─────────────────────────────────────────
+app.get("/ping", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// Self-ping every 10 minutes to prevent sleep on Render free tier
+const SITE_URL = "https://downloader.online";
+setInterval(async () => {
+    try {
+        await axios.get(`${SITE_URL}/ping`);
+        console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
+    } catch (err) {
+        console.error(`[Keep-Alive] Self-ping failed: ${err.message}`);
+    }
+}, 10 * 60 * 1000); // 10 minutes
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
