@@ -48,10 +48,17 @@ function sanitizeFilename(name) {
 /**
  * Robust async version of yt-dlp execution with timeouts
  */
-async function runYtDlpAsync(args, timeoutMs = 15000) {
+async function runYtDlpAsync(args, timeoutMs = 30000) {
   const finalArgs = [
     '--ffmpeg-location', ffmpeg,
-    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    '--no-check-certificates',
+    '--no-warnings',
+    '--ignore-config',
+    '--no-playlist',
+    '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    '--add-header', 'Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    '--add-header', 'Accept-Language:en-US,en;q=0.9',
+    '--extractor-args', 'youtube:player_client=android,ios;player_skip=web,mweb',
     ...args
   ];
   
@@ -64,8 +71,10 @@ async function runYtDlpAsync(args, timeoutMs = 15000) {
   }
 
   strategies.push(
-    { name: 'edge-cookies', args: ['--cookies-from-browser', 'edge', ...finalArgs] },
+    { name: 'firefox-cookies', args: ['--cookies-from-browser', 'firefox', ...finalArgs] },
     { name: 'chrome-cookies', args: ['--cookies-from-browser', 'chrome', ...finalArgs] },
+    { name: 'edge-cookies', args: ['--cookies-from-browser', 'edge', ...finalArgs] },
+    { name: 'opera-cookies', args: ['--cookies-from-browser', 'opera', ...finalArgs] },
     { name: 'plain', args: finalArgs }
   );
 
@@ -107,8 +116,8 @@ async function runYtDlpAsync(args, timeoutMs = 15000) {
         if (args.includes('--dump-json')) {
            try {
              const data = JSON.parse(result.stdout);
-             if (data.formats && data.formats.length > 5) return result;
-             console.log(`Strategy ${strategy.name} returned limited formats (${data.formats.length}), trying fallback...`);
+             if (data.formats && data.formats.length >= 1) return result;
+             console.log(`Strategy ${strategy.name} returned NO formats, trying fallback...`);
            } catch(e) { /* ignore parse error */ }
         } else {
           return result;
@@ -175,6 +184,17 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
   : ['http://localhost:3000', 'https://downloader.online'];
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
+
+// Redirect .html requests to clean URLs
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') && !req.path.includes('/admin/')) {
+    const newPath = req.path.slice(0, -5);
+    if (newPath === '/index') return res.redirect(301, '/');
+    return res.redirect(301, newPath);
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public"), {
   extensions: ['html']
 }));
