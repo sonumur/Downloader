@@ -61,9 +61,9 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
     '--extractor-args', 'youtube:player_client=android,ios;player_skip=web,mweb',
     ...args
   ];
-  
+
   const strategies = [];
-  
+
   // 1. Manual cookies.txt (Highest priority / Power user bypass)
   const cookiesPath = path.join(__dirname, 'cookies.txt');
   if (fs.existsSync(cookiesPath)) {
@@ -88,7 +88,7 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
         const child = spawn(ytDlpPath, strategy.args, { maxBuffer: 100 * 1024 * 1024 });
         let stdout = '';
         let stderr = '';
-        
+
         const timer = setTimeout(() => {
           child.kill();
           resolve({ status: -1, stderr: 'Timeout', stdout });
@@ -114,11 +114,11 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
       if (result.status === 0) {
         // If listing formats, ensure we got more than just storyboards
         if (args.includes('--dump-json')) {
-           try {
-             const data = JSON.parse(result.stdout);
-             if (data.formats && data.formats.length >= 1) return result;
-             console.log(`Strategy ${strategy.name} returned NO formats, trying fallback...`);
-           } catch(e) { /* ignore parse error */ }
+          try {
+            const data = JSON.parse(result.stdout);
+            if (data.formats && data.formats.length >= 1) return result;
+            console.log(`Strategy ${strategy.name} returned NO formats, trying fallback...`);
+          } catch (e) { /* ignore parse error */ }
         } else {
           return result;
         }
@@ -136,6 +136,10 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const publicDir = path.join(__dirname, "public");
+const sitemapPath = path.join(publicDir, "sitemap.xml");
+
+app.set("trust proxy", true);
 
 // ─── Security & CSP Headers ────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -185,6 +189,22 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
+// Make sure crawlers and users land on the canonical HTTPS URL.
+app.use((req, res, next) => {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  if (process.env.NODE_ENV === "production" && forwardedProto && forwardedProto !== "https") {
+    return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+  }
+  next();
+});
+
+// Serve sitemap explicitly so it never falls through to an HTML page.
+app.get("/sitemap.xml", (req, res) => {
+  res.type("application/xml");
+  res.set("Cache-Control", "public, max-age=3600");
+  res.sendFile(sitemapPath);
+});
+
 // Redirect .html requests to clean URLs
 app.use((req, res, next) => {
   if (req.path.endsWith('.html') && !req.path.includes('/admin/')) {
@@ -195,7 +215,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, "public"), {
+app.use(express.static(publicDir, {
   extensions: ['html']
 }));
 
@@ -212,7 +232,7 @@ function isSupportedUrl(url) {
   try {
     const host = new URL(url).hostname.toLowerCase();
     const supported = [
-      'tiktok.com', 'facebook.com', 'fb.watch', 'instagram.com', 
+      'tiktok.com', 'facebook.com', 'fb.watch', 'instagram.com',
       'twitter.com', 'x.com'
     ];
     return supported.some(s => host.includes(s));
@@ -328,13 +348,13 @@ app.post("/download", async (req, res) => {
   try {
     const vidId = videoId || Buffer.from(url).toString('base64').slice(0, 10).replace(/[^a-zA-Z0-9]/g, '');
     const cleanTitle = sanitizeFilename(title || 'video');
-    
+
     // Handle synthetic photo format
     if (formatId.startsWith('photo_')) {
       const photoUrl = req.body.photoUrl || url; // Fallback to url if photoUrl not provided
       const ext = photoUrl.includes('.png') ? 'png' : 'jpg';
       const filePath = path.join(tempDir, `photo_${vidId}.${ext}`);
-      
+
       console.log(`Downloading photo: ${cleanTitle}`);
       const response = await axios({ method: 'GET', url: photoUrl, responseType: 'stream' });
       const writer = fs.createWriteStream(filePath);
@@ -344,10 +364,10 @@ app.post("/download", async (req, res) => {
         writer.on('error', reject);
       });
 
-      return res.json({ 
-        success: true, 
-        video: `/video/${vidId}?format=${ext}&title=${encodeURIComponent(cleanTitle)}&type=photo`, 
-        message: "Photo download complete" 
+      return res.json({
+        success: true,
+        video: `/video/${vidId}?format=${ext}&title=${encodeURIComponent(cleanTitle)}&type=photo`,
+        message: "Photo download complete"
       });
     }
 
@@ -355,12 +375,12 @@ app.post("/download", async (req, res) => {
     // IMPORTANT: Check if it's specifically an audio format OR if the user explicitly requested audio type
     const isAudioOnly = req.body.type === 'audio' || formatId === 'bestaudio' || (formatId.includes('audio') && !formatId.includes('video') && !formatId.includes('+'));
     const ext = isAudioOnly ? 'mp3' : 'mp4';
-    
+
     const typeParam = isAudioOnly ? 'audio' : 'video';
     const formatSuffix = formatId.replace(/[^a-zA-Z0-9+]/g, '_');
     const filePath = path.join(tempDir, `${isAudioOnly ? 'audio' : 'video'}_${vidId}_${formatSuffix}.${ext}`);
     const downloadUrl = `/video/${vidId}?format=${encodeURIComponent(formatId)}&type=${typeParam}&title=${encodeURIComponent(cleanTitle)}`;
-    
+
     // If file exists and is recent (less than 1 hour old), reuse it
     if (fs.existsSync(filePath)) {
       const stats = fs.statSync(filePath);
@@ -368,10 +388,10 @@ app.post("/download", async (req, res) => {
       const endTime = stats.mtime.getTime() + (60 * 60 * 1000);
       if (now < endTime && stats.size > 10000) {
         console.log(`Reusing existing file: ${filePath}`);
-        return res.json({ 
-          success: true, 
-          video: downloadUrl, 
-          message: "Download complete" 
+        return res.json({
+          success: true,
+          video: downloadUrl,
+          message: "Download complete"
         });
       }
       fs.unlinkSync(filePath);
@@ -398,10 +418,10 @@ app.post("/download", async (req, res) => {
 
     if (result.status === 0 && fs.existsSync(filePath) && fs.statSync(filePath).size > 5000) {
       const typeParam = isAudioOnly ? 'audio' : 'video';
-      return res.json({ 
-        success: true, 
-        video: downloadUrl, 
-        message: "Download complete" 
+      return res.json({
+        success: true,
+        video: downloadUrl,
+        message: "Download complete"
       });
     }
 
@@ -423,13 +443,13 @@ app.get("/proxy-image", async (req, res) => {
   try {
     const targetUrl = req.query.url;
     if (!targetUrl) return res.status(400).send("No url");
-    
+
     // SSRF protection: only allow known CDN domains
     let parsedUrl;
     try { parsedUrl = new URL(targetUrl); } catch { return res.status(400).send("Invalid URL"); }
     const isAllowed = ALLOWED_IMAGE_HOSTS.some(h => parsedUrl.hostname.includes(h));
     if (!isAllowed) return res.status(403).send("Forbidden host");
-    
+
     const response = await axios({
       method: 'GET',
       url: targetUrl,
@@ -453,14 +473,14 @@ app.get("/video/:videoId", (req, res) => {
   const format = req.query.format || 'mp4';
   const title = req.query.title || 'video';
   const type = req.query.type || 'video';
-  
+
   let prefix = 'video';
   if (type === 'audio') prefix = 'audio';
   if (type === 'photo') prefix = 'photo';
-  
+
   const formatIdClean = format.replace(/[^a-zA-Z0-9+]/g, '_');
   const fileNameSuffix = (type === 'photo') ? '' : `_${formatIdClean}`;
-  
+
   // Determine actual file extension
   let ext = 'mp4';
   if (type === 'photo') {
@@ -483,7 +503,7 @@ app.get("/video/:videoId", (req, res) => {
     const userAgent = req.headers['user-agent'] || '';
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
     const downloadExt = (isIOS && type === 'video') ? 'mov' : ext;
-    
+
     res.header('Content-Disposition', `attachment; filename="${title}.${downloadExt}"`);
     res.header('Content-Type', contentType);
     fs.createReadStream(filePath).pipe(res);
@@ -500,12 +520,12 @@ app.get("/ping", (req, res) => {
 // Self-ping every 10 minutes to prevent sleep on Render free tier
 const SITE_URL = "https://downloader.online";
 setInterval(async () => {
-    try {
-        await axios.get(`${SITE_URL}/ping`);
-        console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
-    } catch (err) {
-        console.error(`[Keep-Alive] Self-ping failed: ${err.message}`);
-    }
+  try {
+    await axios.get(`${SITE_URL}/ping`);
+    console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
+  } catch (err) {
+    console.error(`[Keep-Alive] Self-ping failed: ${err.message}`);
+  }
 }, 10 * 60 * 1000); // 10 minutes
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
