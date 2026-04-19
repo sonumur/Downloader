@@ -70,13 +70,18 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
     strategies.push({ name: 'manual-cookies', args: ['--cookies', cookiesPath, ...finalArgs] });
   }
 
-  strategies.push(
-    { name: 'firefox-cookies', args: ['--cookies-from-browser', 'firefox', ...finalArgs] },
-    { name: 'chrome-cookies', args: ['--cookies-from-browser', 'chrome', ...finalArgs] },
-    { name: 'edge-cookies', args: ['--cookies-from-browser', 'edge', ...finalArgs] },
-    { name: 'opera-cookies', args: ['--cookies-from-browser', 'opera', ...finalArgs] },
-    { name: 'plain', args: finalArgs }
-  );
+  // On server environments (Production), browser profiles usually lack DPAPI keys or permissions.
+  // We prioritize manual cookies.txt and fall back to plain or limited strategies.
+  if (process.env.NODE_ENV !== 'production') {
+    strategies.push(
+      { name: 'firefox-cookies', args: ['--cookies-from-browser', 'firefox', ...finalArgs] },
+      { name: 'chrome-cookies', args: ['--cookies-from-browser', 'chrome', ...finalArgs] },
+      { name: 'edge-cookies', args: ['--cookies-from-browser', 'edge', ...finalArgs] },
+      { name: 'opera-cookies', args: ['--cookies-from-browser', 'opera', ...finalArgs] }
+    );
+  }
+  
+  strategies.push({ name: 'plain', args: finalArgs });
 
   const { spawn } = require('child_process');
   let lastResult = { status: -1, stderr: 'No strategies tried.' };
@@ -139,6 +144,7 @@ const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, "public");
 const sitemapPath = path.join(publicDir, "sitemap.xml");
 const logoPath = path.join(publicDir, "logo.png");
+const faviconPath = path.join(publicDir, "favicon.png");
 
 app.set("trust proxy", true);
 
@@ -162,6 +168,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Robots-Tag', 'index, follow');
   next();
 });
 
@@ -211,7 +218,7 @@ app.get("/sitemap.xml", (req, res) => {
 app.get("/favicon.ico", (req, res) => {
   res.type("image/png");
   res.set("Cache-Control", "public, max-age=3600");
-  res.sendFile(logoPath);
+  res.sendFile(faviconPath);
 });
 
 // Redirect .html requests to clean URLs
@@ -527,10 +534,11 @@ app.get("/ping", (req, res) => {
 });
 
 // Self-ping every 10 minutes to prevent sleep on Render free tier
-const SITE_URL = "https://downloader.online";
+// Use localhost to ensure it works regardless of DNS state
 setInterval(async () => {
   try {
-    await axios.get(`${SITE_URL}/ping`);
+    const host = `http://localhost:${PORT}`;
+    await axios.get(`${host}/ping`);
     console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
   } catch (err) {
     console.error(`[Keep-Alive] Self-ping failed: ${err.message}`);
