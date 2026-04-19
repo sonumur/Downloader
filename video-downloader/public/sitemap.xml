@@ -68,6 +68,11 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
+    <loc>https://downloader.online/site-map</loc>
+    <priority>0.5</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
     <loc>https://downloader.online/contact</loc>
     <priority>0.5</priority>
     <changefreq>monthly</changefreq>
