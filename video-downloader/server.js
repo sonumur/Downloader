@@ -533,16 +533,36 @@ app.get("/ping", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Self-ping every 10 minutes to prevent sleep on Render free tier
-// Use localhost to ensure it works regardless of DNS state
+/**
+ * Self-ping logic to prevent Render free-tier from sleeping.
+ * Pings the external URL if available, otherwise falls back to localhost.
+ */
 setInterval(async () => {
   try {
-    const host = `http://localhost:${PORT}`;
-    await axios.get(`${host}/ping`);
+    // Try to determine the most reliable URL to ping
+    // 1. RENDER_EXTERNAL_URL is specific to Render if configured
+    // 2. Default to downloader.online for production
+    // 3. Fallback to localhost
+    let host = process.env.RENDER_EXTERNAL_URL || 'https://downloader.online';
+    
+    // In local development, always use localhost
+    if (process.env.NODE_ENV !== 'production' && !process.env.RENDER_EXTERNAL_URL) {
+      host = `http://localhost:${PORT}`;
+    }
+
+    const pingUrl = `${host}/ping`;
+    await axios.get(pingUrl, {
+      headers: { 'User-Agent': 'Render-Keep-Alive/1.0' },
+      timeout: 10000
+    });
+    
+    logToFile(`[Keep-Alive] Self-ping successful: ${pingUrl}`);
     console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
   } catch (err) {
-    console.error(`[Keep-Alive] Self-ping failed: ${err.message}`);
+    const errMsg = `[Keep-Alive] Self-ping failed: ${err.message}`;
+    logToFile(errMsg);
+    console.error(errMsg);
   }
-}, 10 * 60 * 1000); // 10 minutes
+}, 14 * 60 * 1000); // 14 minutes (Render sleep threshold is ~15 min)
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
