@@ -143,8 +143,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, "public");
 const sitemapPath = path.join(publicDir, "sitemap.xml");
-const logoPath = path.join(publicDir, "logo.png");
-const faviconPath = path.join(publicDir, "favicon.png");
+const logoPath = path.join(publicDir, "logo.svg");
+const faviconPath = path.join(publicDir, "favicon.svg");
 
 app.set("trust proxy", true);
 
@@ -216,7 +216,7 @@ app.get("/sitemap.xml", (req, res) => {
 // Browsers often request /favicon.ico directly and cache it aggressively.
 // Serve the main brand logo here so the tab icon matches the site logo.
 app.get("/favicon.ico", (req, res) => {
-  res.type("image/png");
+  res.type("image/svg+xml");
   res.set("Cache-Control", "public, max-age=3600");
   res.sendFile(faviconPath);
 });
