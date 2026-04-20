@@ -37,14 +37,13 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Hero Search -->
         <section class="hero-section">
             <h1 class="hero-title">Instagram Reels Downloader</h1>
-            <p class="hero-subtitle">Free 4K & HD Reels Saver. Fast and Secure (iGram & SnapInsta Alt).</p>
+            <p class="hero-subtitle">Fast and free Instagram Reels downloader. Save IG Reels to your device in 1080p high quality.</p>
 
+            <!-- Feature Icons -->
             <div class="feature-icons-container">
-                <a href="/instagram-reels-downloader" class="feature-item">
-                    <div class="icon-box icon-reels">
+                <a href="/instagram-reels-downloader" class="feature-item active"><div class="icon-box icon-reels">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
@@ -138,58 +137,64 @@
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
-            <p class="terms">By using our service you accept our <a href="terms-of-service">Terms of Service</a>
-                and agree to use this tool only for content you own or have permission to download.</p>
-
-            <!-- Trust Badges -->
-            <div class="trust-badges">
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                    <span>Safe & Secure</span>
+            <div id="loadingContainer" class="loading-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
                 </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m5 12 5 5L20 7"></path>
-                    </svg>
-                    <span>No Watermark</span>
-                </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span>HD Quality</span>
-                </div>
+                <p id="loadingText">Analyzing Link...</p>
             </div>
-        </section>
 
-        <!-- Status Message -->
-        <div id="status" class="status"></div>
+            <!-- Status Message -->
+            <div id="status" class="status"></div>
 
-        <!-- Video metadata Card -->
-        <div id="videoCard" class="video-card">
-            <div class="video-card-content">
-                <div class="thumbnail-wrapper">
-                    <img id="thumbnail" src="" alt="Thumbnail" referrerpolicy="no-referrer">
-                </div>
-                <div class="video-info">
-                    <h3 id="videoTitle" class="video-title">Video Title</h3>
-                    <div id="videoDuration" class="video-duration">3:49</div>
-
-                    <div class="download-controls">
-                        <div class="download-group">
-                            <button class="btn-download" id="finalDownloadBtn">Download</button>
-                            <select id="formatSelect" class="format-select">
-                                <option value="">Select Format</option>
-                            </select>
+            <!-- Video metadata Card -->
+            <div id="videoCard" class="video-card" style="display: none;">
+                <div class="video-card-content">
+                    <div class="thumbnail-wrapper">
+                        <img id="thumbnail" src="" alt="Thumbnail" style="display: none;">
+                    </div>
+                    <div class="video-info">
+                        <h3 id="videoTitle" class="video-title"></h3>
+                        <div id="videoDuration" class="video-duration"></div>
+                        <div class="download-controls">
+                            <div class="download-group">
+                                <button id="finalDownloadBtn" class="btn-download">Download</button>
+                                <select id="formatSelect" class="format-select">
+                                    <option value="">Loading formats...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="trust-container">
+                <p class="terms">By using our service you accept our <a href="/terms-of-service">Terms of Service</a>
+                    and agree to use this tool only for content you own or have permission to download.</p>
+                <div class="trust-badges">
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>Safe & Secure</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m5 12 5 5L20 7"></path>
+                        </svg>
+                        <span>No Watermark</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>HD Quality</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Promo Area -->
         <div class="promo-card">
@@ -202,49 +207,47 @@
             </div>
         </div>
 
-        <!-- Features & Info Section -->
         <section class="info-section">
             <div class="info-content">
-                <h2>How to Download Instagram Reels?</h2>
+
+                <h2>How to download Instagram Reels?</h2>
                 <div class="visual-guide">
                     <div class="guide-step">
-                        <div class="guide-image">
-                            <img src="reels1.png" alt="Copy Instagram Reels Link">
-                        </div>
                         <div class="guide-info">
                             <div class="step-badge">Step 1</div>
-                            <h3>Copy the Reel URL</h3>
-                            <p>Open Instagram, find the Reel you want to download, tap the Share icon and select <strong>"Copy Link"</strong>.</p>
+                            <h3>Copy the Reels URL</h3>
+                            <p>Open the Instagram app and find the Reel you want to download. Tap on the <strong>Share</strong> button and select <strong>Copy Link</strong> to save the URL to your clipboard.</p>
+                        </div>
+                        <div class="guide-image">
+                            <img src="reels1.png" alt="Step 1: Copy Reels Link">
                         </div>
                     </div>
 
                     <div class="guide-step reverse">
-                        <div class="guide-image">
-                            <img src="reels2.png" alt="Paste Reel Link">
-                        </div>
                         <div class="guide-info">
                             <div class="step-badge">Step 2</div>
                             <h3>Paste the Link</h3>
-                            <p>Head back to <strong>downloader.online</strong>, paste the copied link into the input box at the top, and click <strong>"Download"</strong>.</p>
+                            <p>Head over to <strong>downloader.online</strong> and paste the copied link into the search bar at the top of the page. Click the <strong>Download</strong> button to start processing.</p>
+                        </div>
+                        <div class="guide-image">
+                            <img src="reels2.png" alt="Step 2: Paste Link">
                         </div>
                     </div>
 
                     <div class="guide-step">
-                        <div class="guide-image">
-                            <img src="reels3.png" alt="Save Instagram Reel">
-                        </div>
                         <div class="guide-info">
                             <div class="step-badge">Step 3</div>
-                            <h3>Save the Reel</h3>
-                            <p>Preview the video, choose your preferred format/quality, and click the <strong>"Download"</strong> button to save it to your device.</p>
+                            <h3>Save & Download</h3>
+                            <p>Once the processing is complete, select your desired resolution (e.g., 1080p HD) and click the final <strong>Download</strong> button to save the Reel to your device.</p>
+                        </div>
+                        <div class="guide-image">
+                            <img src="reels3.png" alt="Step 3: Save Reel">
                         </div>
                     </div>
                 </div>
 
                 <div class="features-divider"></div>
-
-                <div class="seo-content">
-                    <h2>The Best Instagram Reels Downloader Online</h2>
+<div class="seo-content"><h2>The Best Instagram Reels Downloader Online</h2>
                     <p>downloaderonline provides a seamless way to use an online downloader for Instagram Reels. As a top vidsaved alternative, our tool extracts the
                         highest quality available
                         so you can save it to your device instantly without any watermarks.</p>
@@ -258,27 +261,26 @@
                         <li><strong>Free forever with no limits:</strong> Download as many Reels as you'd like.</li>
                         <li><strong>HD Quality:</strong> Save Reels in their original resolution.</li>
                         <li><strong>Cross-Platform:</strong> Works on Windows, Mac, Android, and iOS.</li>
-                    </ul>
-                </div>
+                    </ul></div>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
+
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2026 downloader.online. All rights reserved.</p>
             <div class="footer-links">
-                <a href="dmca">DMCA</a>
-                <a href="privacy-policy">Privacy Policy</a>
-                <a href="terms-of-service">Terms of Service</a>
-                <a href="contact">Contact Us</a>
-                <a href="/">Home</a>
+                <a href="/site-map">Site Map</a>
+                <a href="/dmca">DMCA</a>
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-of-service">Terms of Service</a>
             </div>
         </div>
     </footer>
+    
 
-    <script>
+<script>
         const urlInput = document.getElementById('url');
         const downloadBtn = document.getElementById('downloadBtn');
         const statusEl = document.getElementById('status');
@@ -309,14 +311,19 @@
         async function fetchFormats() {
             const url = urlInput.value.trim();
             if (!url) {
-                showStatus('Please paste a Reels URL.', true);
+                showStatus('Please paste a video URL.', true);
                 return;
             }
 
             try {
-                showStatus('Analyzing Reels...');
-                downloadBtn.disabled = true;
+                // UI Changes: Hide search, show loading
+                const searchWrapper = document.querySelector('.search-wrapper');
+                const loadingContainer = document.getElementById('loadingContainer');
+                
+                searchWrapper.classList.add('hidden');
+                loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
+                showStatus('');
 
                 const res = await fetch('/formats', {
                     method: 'POST',
@@ -327,14 +334,22 @@
                 const data = await res.json();
                 if (!data.success) {
                     showStatus(data.message, true);
+                    // Show search again on error
+                    searchWrapper.classList.remove('hidden');
+                    loadingContainer.style.display = 'none';
                     return;
                 }
 
                 currentVideoData = data;
                 displayVideoInfo(data);
-                showStatus('');
+                
+                // Hide loading, show results
+                loadingContainer.style.display = 'none';
             } catch (err) {
                 showStatus('Failed to connect to server.', true);
+                // Show search again on error
+                document.querySelector('.search-wrapper').classList.remove('hidden');
+                document.getElementById('loadingContainer').style.display = 'none';
             } finally {
                 downloadBtn.disabled = false;
             }
@@ -347,9 +362,10 @@
             } else {
                 thumbnail.style.display = 'none';
             }
-            videoTitle.textContent = data.title || "Reels Download";
+            videoTitle.textContent = data.title || "Video Download";
             videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
+            // Populate formats
             formatSelect.innerHTML = '';
             const allFormats = [...data.formats.video, ...data.formats.audio];
 
@@ -404,6 +420,7 @@
                 }
 
                 showStatus('Download ready!');
+                // Trigger browser download
                 window.location.href = data.video;
             } catch (err) {
                 showStatus('Download failed.', true);
@@ -418,10 +435,8 @@
         urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchFormats();
         });
-    </script>
+</script>
     <script src="mobile-nav.js"></script>
 </body>
 
 </html>
-
-

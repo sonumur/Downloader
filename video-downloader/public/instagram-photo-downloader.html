@@ -30,7 +30,7 @@
             <nav class="header-nav">
                 <a href="/how-to-use">How to Use</a>
                 <a href="/platforms">Platforms</a>
-                <a href="/site-map">Site Map</a>
+                
                 <a href="/contact">Contact Us</a>
             </nav>
         </div>
@@ -38,11 +38,11 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Hero Search -->
         <section class="hero-section">
             <h1 class="hero-title">Instagram Photo Downloader</h1>
-            <p class="hero-subtitle">Fast & Free IG Photo & DP Saver. Save high quality images instantly.</p>
+            <p class="hero-subtitle">Save Instagram photos and images online for free. Download IG posts in high resolution.</p>
 
+            <!-- Feature Icons -->
             <div class="feature-icons-container">
                 <a href="/instagram-reels-downloader" class="feature-item">
                     <div class="icon-box icon-reels">
@@ -81,8 +81,7 @@
                     </div>
                     <span class="feature-label">Audio</span>
                 </a>
-                <a href="/instagram-photo-downloader" class="feature-item">
-                    <div class="icon-box icon-photo">
+                <a href="/instagram-photo-downloader" class="feature-item active"><div class="icon-box icon-photo">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -135,62 +134,68 @@
 
             <div class="search-wrapper">
                 <div class="search-box">
-                    <input type="text" id="url" placeholder="Paste Instagram Photo link here">
+                    <input type="text" id="url" placeholder="Paste Instagram link here" autofocus>
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
-            <p class="terms">By using our service you accept our <a href="terms-of-service">Terms of Service</a>
-                and agree to use this tool only for content you own or have permission to download.</p>
-
-            <!-- Trust Badges -->
-            <div class="trust-badges">
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                    <span>Safe & Secure</span>
+            <div id="loadingContainer" class="loading-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
                 </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m5 12 5 5L20 7"></path>
-                    </svg>
-                    <span>No Watermark</span>
-                </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span>HD Quality</span>
-                </div>
+                <p id="loadingText">Analyzing Link...</p>
             </div>
-        </section>
 
-        <!-- Status Message -->
-        <div id="status" class="status"></div>
+            <!-- Status Message -->
+            <div id="status" class="status"></div>
 
-        <!-- Video metadata Card -->
-        <div id="videoCard" class="video-card">
-            <div class="video-card-content">
-                <div class="thumbnail-wrapper">
-                    <img id="thumbnail" src="" alt="Thumbnail" referrerpolicy="no-referrer">
-                </div>
-                <div class="video-info">
-                    <h3 id="videoTitle" class="video-title">Photo Title</h3>
-                    <div id="videoDuration" class="video-duration"></div>
-
-                    <div class="download-controls">
-                        <div class="download-group">
-                            <button class="btn-download" id="finalDownloadBtn">Download</button>
-                            <select id="formatSelect" class="format-select">
-                                <option value="">Select Format</option>
-                            </select>
+            <!-- Video metadata Card -->
+            <div id="videoCard" class="video-card" style="display: none;">
+                <div class="video-card-content">
+                    <div class="thumbnail-wrapper">
+                        <img id="thumbnail" src="" alt="Thumbnail" style="display: none;">
+                    </div>
+                    <div class="video-info">
+                        <h3 id="videoTitle" class="video-title"></h3>
+                        <div id="videoDuration" class="video-duration"></div>
+                        <div class="download-controls">
+                            <div class="download-group">
+                                <button id="finalDownloadBtn" class="btn-download">Download</button>
+                                <select id="formatSelect" class="format-select">
+                                    <option value="">Loading formats...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="trust-container">
+                <p class="terms">By using our service you accept our <a href="/terms-of-service">Terms of Service</a>
+                    and agree to use this tool only for content you own or have permission to download.</p>
+                <div class="trust-badges">
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>Safe & Secure</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m5 12 5 5L20 7"></path>
+                        </svg>
+                        <span>No Watermark</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>HD Quality</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Promo Area -->
         <div class="promo-card">
@@ -203,15 +208,15 @@
             </div>
         </div>
 
-        <!-- Features & Info Section -->
         <section class="info-section">
             <div class="info-content">
-                <h2>How to download Instagram Photos?</h2>
+
+                <h2>How to download online videos?</h2>
                 <div class="steps-grid">
                     <div class="step-card">
                         <div class="step-num">1</div>
-                        <h3>Copy the Photo URL</h3>
-                        <p>Copy the Photo link from the Instagram app or website.</p>
+                        <h3>Copy the Image URL</h3>
+                        <p>Copy the link from the Instagram app (Share > Copy Link).</p>
                     </div>
                     <div class="step-card">
                         <div class="step-num">2</div>
@@ -220,23 +225,13 @@
                     </div>
                     <div class="step-card">
                         <div class="step-num">3</div>
-                        <h3>Save the Photo</h3>
-                        <p>Choose your preferred quality format and the download will start!</p>
+                        <h3>Save the Content</h3>
+                        <p>Choose your preferred quality format (MP4 or MP3) and the download will start!</p>
                     </div>
                 </div>
 
                 <div class="features-divider"></div>
-
-                <div class="seo-content">
-                    <h2>Browse Related Pages</h2>
-                    <ul>
-                        <li><a href="/instagram-downloader">Instagram Downloader</a></li>
-                        <li><a href="/instagram-reels-downloader">Instagram Reels Downloader</a></li>
-                        <li><a href="/instagram-stories-downloader">Instagram Stories Downloader</a></li>
-                        <li><a href="/site-map">Full Site Map</a></li>
-                    </ul>
-
-                    <h2>The Best Instagram Photo Downloader Online</h2>
+<div class="seo-content"><h2>The Best Instagram Photo Downloader Online</h2>
                     <p>downloader.online provides a seamless way to download Instagram Photos. Our tool extracts the
                         highest quality available
                         so you can save it to your device instantly.</p>
@@ -250,28 +245,26 @@
                         <li><strong>Free forever with no limits:</strong> Download as many Photos as you'd like.</li>
                         <li><strong>HD Quality:</strong> Save Photos in their original resolution.</li>
                         <li><strong>Cross-Platform:</strong> Works on Windows, Mac, Android, and iOS.</li>
-                    </ul>
-                </div>
+                    </ul></div>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
+
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2026 downloader.online. All rights reserved.</p>
             <div class="footer-links">
-                <a href="site-map">Site Map</a>
-                <a href="dmca">DMCA</a>
-                <a href="privacy-policy">Privacy Policy</a>
-                <a href="terms-of-service">Terms of Service</a>
-                <a href="contact">Contact Us</a>
-                <a href="/">Home</a>
+                <a href="/site-map">Site Map</a>
+                <a href="/dmca">DMCA</a>
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-of-service">Terms of Service</a>
             </div>
         </div>
     </footer>
+    
 
-    <script>
+<script>
         const urlInput = document.getElementById('url');
         const downloadBtn = document.getElementById('downloadBtn');
         const statusEl = document.getElementById('status');
@@ -289,17 +282,32 @@
             statusEl.className = isError ? 'status error' : 'status';
         }
 
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return [h, m, s]
+                .filter((v, i) => v > 0 || i > 0)
+                .map(v => v.toString().padStart(2, '0'))
+                .join(':');
+        }
+
         async function fetchFormats() {
             const url = urlInput.value.trim();
             if (!url) {
-                showStatus('Please paste a Photo URL.', true);
+                showStatus('Please paste a video URL.', true);
                 return;
             }
 
             try {
-                showStatus('Analyzing Photo...');
-                downloadBtn.disabled = true;
+                // UI Changes: Hide search, show loading
+                const searchWrapper = document.querySelector('.search-wrapper');
+                const loadingContainer = document.getElementById('loadingContainer');
+                
+                searchWrapper.classList.add('hidden');
+                loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
+                showStatus('');
 
                 const res = await fetch('/formats', {
                     method: 'POST',
@@ -310,14 +318,22 @@
                 const data = await res.json();
                 if (!data.success) {
                     showStatus(data.message, true);
+                    // Show search again on error
+                    searchWrapper.classList.remove('hidden');
+                    loadingContainer.style.display = 'none';
                     return;
                 }
 
                 currentVideoData = data;
                 displayVideoInfo(data);
-                showStatus('');
+                
+                // Hide loading, show results
+                loadingContainer.style.display = 'none';
             } catch (err) {
                 showStatus('Failed to connect to server.', true);
+                // Show search again on error
+                document.querySelector('.search-wrapper').classList.remove('hidden');
+                document.getElementById('loadingContainer').style.display = 'none';
             } finally {
                 downloadBtn.disabled = false;
             }
@@ -330,9 +346,10 @@
             } else {
                 thumbnail.style.display = 'none';
             }
-            videoTitle.textContent = data.title || "Photo Download";
-            videoDuration.textContent = '';
+            videoTitle.textContent = data.title || "Video Download";
+            videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
+            // Populate formats
             formatSelect.innerHTML = '';
             const allFormats = [...data.formats.video, ...data.formats.audio];
 
@@ -361,7 +378,7 @@
             }
 
             try {
-                showStatus('Processing download...');
+                showStatus('Processing download... this may take a bit.');
                 finalDownloadBtn.disabled = true;
 
                 const formatId = formatSelect.value;
@@ -387,6 +404,7 @@
                 }
 
                 showStatus('Download ready!');
+                // Trigger browser download
                 window.location.href = data.video;
             } catch (err) {
                 showStatus('Download failed.', true);
@@ -401,10 +419,8 @@
         urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchFormats();
         });
-    </script>
+</script>
     <script src="mobile-nav.js"></script>
 </body>
 
 </html>
-
-

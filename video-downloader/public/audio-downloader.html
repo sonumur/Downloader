@@ -37,11 +37,11 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Hero Search -->
         <section class="hero-section">
-            <h1 class="hero-title">Audio Downloader</h1>
-            <p class="hero-subtitle">Fast & Free downloads from Instagram, TikTok, Facebook, Twitter.</p>
+            <h1 class="hero-title">Video to MP3 Converter</h1>
+            <p class="hero-subtitle">Convert and download online videos to high-quality MP3 audio files for free. Fast and secure.</p>
 
+            <!-- Feature Icons -->
             <div class="feature-icons-container">
                 <a href="/instagram-reels-downloader" class="feature-item">
                     <div class="icon-box icon-reels">
@@ -69,8 +69,7 @@
                     </div>
                     <span class="feature-label">Video</span>
                 </a>
-                <a href="/audio-downloader" class="feature-item">
-                    <div class="icon-box icon-audio">
+                <a href="/audio-downloader" class="feature-item active"><div class="icon-box icon-audio">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 18V5l12-2v13"></path>
@@ -134,62 +133,68 @@
 
             <div class="search-wrapper">
                 <div class="search-box">
-                    <input type="text" id="url" placeholder="Paste link to convert to Audio/MP3">
+                    <input type="text" id="url" placeholder="Paste video link here" autofocus>
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
-            <p class="terms">By using our service you accept our <a href="terms-of-service">Terms of Service</a>
-                and agree to use this tool only for content you own or have permission to download.</p>
-
-            <!-- Trust Badges -->
-            <div class="trust-badges">
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                    <span>Safe & Secure</span>
+            <div id="loadingContainer" class="loading-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
                 </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m5 12 5 5L20 7"></path>
-                    </svg>
-                    <span>No Watermark</span>
-                </div>
-                <div class="badge-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span>HD Quality</span>
-                </div>
+                <p id="loadingText">Analyzing Link...</p>
             </div>
-        </section>
 
-        <!-- Status Message -->
-        <div id="status" class="status"></div>
+            <!-- Status Message -->
+            <div id="status" class="status"></div>
 
-        <!-- Video metadata Card -->
-        <div id="videoCard" class="video-card">
-            <div class="video-card-content">
-                <div class="thumbnail-wrapper">
-                    <img id="thumbnail" src="" alt="Thumbnail" referrerpolicy="no-referrer">
-                </div>
-                <div class="video-info">
-                    <h3 id="videoTitle" class="video-title">Audio Title</h3>
-                    <div id="videoDuration" class="video-duration"></div>
-
-                    <div class="download-controls">
-                        <div class="download-group">
-                            <button class="btn-download" id="finalDownloadBtn">Download</button>
-                            <select id="formatSelect" class="format-select">
-                                <option value="">Select Format</option>
-                            </select>
+            <!-- Video metadata Card -->
+            <div id="videoCard" class="video-card" style="display: none;">
+                <div class="video-card-content">
+                    <div class="thumbnail-wrapper">
+                        <img id="thumbnail" src="" alt="Thumbnail" style="display: none;">
+                    </div>
+                    <div class="video-info">
+                        <h3 id="videoTitle" class="video-title"></h3>
+                        <div id="videoDuration" class="video-duration"></div>
+                        <div class="download-controls">
+                            <div class="download-group">
+                                <button id="finalDownloadBtn" class="btn-download">Download</button>
+                                <select id="formatSelect" class="format-select">
+                                    <option value="">Loading formats...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="trust-container">
+                <p class="terms">By using our service you accept our <a href="/terms-of-service">Terms of Service</a>
+                    and agree to use this tool only for content you own or have permission to download.</p>
+                <div class="trust-badges">
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>Safe & Secure</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m5 12 5 5L20 7"></path>
+                        </svg>
+                        <span>No Watermark</span>
+                    </div>
+                    <div class="badge-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>HD Quality</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Promo Area -->
         <div class="promo-card">
@@ -202,32 +207,30 @@
             </div>
         </div>
 
-        <!-- Features & Info Section -->
         <section class="info-section">
             <div class="info-content">
-                <h2>How to download Audio/MP3?</h2>
+
+                <h2>How to download online videos?</h2>
                 <div class="steps-grid">
                     <div class="step-card">
                         <div class="step-num">1</div>
-                        <h3>Copy the URL</h3>
-                        <p>Copy the video link from Instagram, TikTok, Facebook, or Twitter.</p>
+                        <h3>Copy the Video URL</h3>
+                        <p>Copy the link from the video (Share > Copy Link).</p>
                     </div>
                     <div class="step-card">
                         <div class="step-num">2</div>
                         <h3>Paste the Link</h3>
-                        <p>Paste the link into our search box above and click "Download".</p>
+                        <p>Paste the copied link into our search box above and click "Download".</p>
                     </div>
                     <div class="step-card">
                         <div class="step-num">3</div>
-                        <h3>Save the MP3</h3>
-                        <p>Choose the MP3 format and the download will start!</p>
+                        <h3>Save the Content</h3>
+                        <p>Choose your preferred quality format (MP4 or MP3) and the download will start!</p>
                     </div>
                 </div>
 
                 <div class="features-divider"></div>
-
-                <div class="seo-content">
-                    <h2>The Best Online Audio Downloader</h2>
+<div class="seo-content"><h2>The Best Online Audio Downloader</h2>
                     <p>downloader.online provides a seamless way to convert online videos to high-quality MP3 audio files.</p>
 
                     <h2>Why choose our Audio Downloader?</h2>
@@ -237,27 +240,26 @@
                         <li><strong>Free forever with no limits:</strong> Convert as many videos as you'd like.</li>
                         <li><strong>High Quality MP3:</strong> Extract audio in 320kbps where available.</li>
                         <li><strong>Cross-Platform:</strong> Works on Windows, Mac, Android, and iOS.</li>
-                    </ul>
-                </div>
+                    </ul></div>
             </div>
         </section>
     </main>
 
-    <!-- Footer -->
+
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2026 downloader.online. All rights reserved.</p>
             <div class="footer-links">
-                <a href="dmca">DMCA</a>
-                <a href="privacy-policy">Privacy Policy</a>
-                <a href="terms-of-service">Terms of Service</a>
-                <a href="contact">Contact Us</a>
-                <a href="/">Home</a>
+                <a href="/site-map">Site Map</a>
+                <a href="/dmca">DMCA</a>
+                <a href="/privacy-policy">Privacy Policy</a>
+                <a href="/terms-of-service">Terms of Service</a>
             </div>
         </div>
     </footer>
+    
 
-    <script>
+<script>
         const urlInput = document.getElementById('url');
         const downloadBtn = document.getElementById('downloadBtn');
         const statusEl = document.getElementById('status');
@@ -288,14 +290,19 @@
         async function fetchFormats() {
             const url = urlInput.value.trim();
             if (!url) {
-                showStatus('Please paste a URL.', true);
+                showStatus('Please paste a video URL.', true);
                 return;
             }
 
             try {
-                showStatus('Analyzing media...');
-                downloadBtn.disabled = true;
+                // UI Changes: Hide search, show loading
+                const searchWrapper = document.querySelector('.search-wrapper');
+                const loadingContainer = document.getElementById('loadingContainer');
+                
+                searchWrapper.classList.add('hidden');
+                loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
+                showStatus('');
 
                 const res = await fetch('/formats', {
                     method: 'POST',
@@ -306,14 +313,22 @@
                 const data = await res.json();
                 if (!data.success) {
                     showStatus(data.message, true);
+                    // Show search again on error
+                    searchWrapper.classList.remove('hidden');
+                    loadingContainer.style.display = 'none';
                     return;
                 }
 
                 currentVideoData = data;
                 displayVideoInfo(data);
-                showStatus('');
+                
+                // Hide loading, show results
+                loadingContainer.style.display = 'none';
             } catch (err) {
                 showStatus('Failed to connect to server.', true);
+                // Show search again on error
+                document.querySelector('.search-wrapper').classList.remove('hidden');
+                document.getElementById('loadingContainer').style.display = 'none';
             } finally {
                 downloadBtn.disabled = false;
             }
@@ -326,11 +341,12 @@
             } else {
                 thumbnail.style.display = 'none';
             }
-            videoTitle.textContent = data.title || "Audio Download";
+            videoTitle.textContent = data.title || "Video Download";
             videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
+            // Populate formats
             formatSelect.innerHTML = '';
-            const allFormats = [...data.formats.audio, ...data.formats.video]; // Priority to Audio
+            const allFormats = [...data.formats.video, ...data.formats.audio];
 
             allFormats.forEach(f => {
                 const opt = document.createElement('option');
@@ -357,7 +373,7 @@
             }
 
             try {
-                showStatus('Processing download...');
+                showStatus('Processing download... this may take a bit.');
                 finalDownloadBtn.disabled = true;
 
                 const formatId = formatSelect.value;
@@ -383,6 +399,7 @@
                 }
 
                 showStatus('Download ready!');
+                // Trigger browser download
                 window.location.href = data.video;
             } catch (err) {
                 showStatus('Download failed.', true);
@@ -397,10 +414,8 @@
         urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchFormats();
         });
-    </script>
+</script>
     <script src="mobile-nav.js"></script>
 </body>
 
 </html>
-
-

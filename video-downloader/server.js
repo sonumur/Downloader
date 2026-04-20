@@ -23,7 +23,9 @@ console.log('Using yt-dlp binary:', ytDlpPath);
 
 function logToFile(msg) {
   const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
-  fs.appendFileSync(path.join(__dirname, 'server.log'), logMsg);
+  fs.appendFile(path.join(__dirname, 'server.log'), logMsg, (err) => {
+    if (err) console.error('Failed to write to server.log:', err);
+  });
 }
 logToFile('Server starting...');
 
@@ -80,7 +82,7 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
       { name: 'opera-cookies', args: ['--cookies-from-browser', 'opera', ...finalArgs] }
     );
   }
-  
+
   strategies.push({ name: 'plain', args: finalArgs });
 
   const { spawn } = require('child_process');
@@ -117,13 +119,14 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
       console.log(`Strategy ${strategy.name} finished with status ${result.status}`);
 
       if (result.status === 0) {
-        // If listing formats, ensure we got more than just storyboards
+        // If listing formats, ensure we got valid JSON from yt-dlp
         if (args.includes('--dump-json')) {
           try {
             const data = JSON.parse(result.stdout);
-            if (data.formats && data.formats.length >= 1) return result;
-            console.log(`Strategy ${strategy.name} returned NO formats, trying fallback...`);
-          } catch (e) { /* ignore parse error */ }
+            // Accept if we have an id (valid media) even with no formats (e.g. photo posts)
+            if (data.id) return result;
+            console.log(`Strategy ${strategy.name} returned invalid/empty JSON, trying fallback...`);
+          } catch (e) { /* ignore parse error, try next strategy */ }
         } else {
           return result;
         }
@@ -196,6 +199,16 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
   : ['http://localhost:3000', 'https://downloader.online'];
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
+
+// Redirect trailing slashes to clean URLs (except root)
+app.use((req, res, next) => {
+  if (req.path !== '/' && req.path.endsWith('/')) {
+    const query = req.url.slice(req.path.length);
+    const safepath = req.path.slice(0, -1).replace(/\/+/g, '/');
+    return res.redirect(301, safepath + query);
+  }
+  next();
+});
 
 // Make sure crawlers and users land on the canonical HTTPS URL.
 app.use((req, res, next) => {
@@ -275,11 +288,27 @@ app.post("/formats", async (req, res) => {
 
     if (result.status !== 0) {
       const stderr = result.stderr || '';
-      const clean = stderr.split('\n').find(l => l.includes('ERROR')) || stderr.slice(0, 300);
-      throw new Error(clean.replace('ERROR: ', '').trim() || "Format analysis failed.");
+      // Specific tolerance for Instagram "No video formats found" which happens for photo posts
+      const isIgPhotoError = url.includes('instagram.com') && stderr.includes('No video formats found');
+
+      if (!isIgPhotoError) {
+        const clean = stderr.split('\n').find(l => l.includes('ERROR')) || stderr.slice(0, 300);
+        throw new Error(clean.replace('ERROR: ', '').trim() || "Format analysis failed.");
+      }
+      console.log('Tolerating IG "No video formats" error for photo extraction fallback.');
     }
 
-    const data = JSON.parse(result.stdout.toString());
+    let data = {};
+    try {
+      data = JSON.parse(result.stdout.toString());
+    } catch (e) {
+      if (url.includes('instagram.com')) {
+        // synthesize basic data if JSON parse fails but we suspect a photo post
+        data = { id: 'ig_post', title: 'Instagram Post', formats: [], thumbnails: [] };
+      } else {
+        throw e;
+      }
+    }
     const formats = data.formats || [];
 
     let videoFormats = [];
@@ -312,6 +341,33 @@ app.post("/formats", async (req, res) => {
         videoFormats.push({ id: f.format_id, quality: 'Original', format: f.ext, size: f.filesize, type: 'photo', note: 'Image', url: f.url });
       }
     });
+
+    // If no formats were found (common for IG photos), fall back to thumbnails
+    if (videoFormats.length === 0 && data.thumbnails && data.thumbnails.length > 0) {
+      // Find the largest thumbnail
+      const bestThumb = data.thumbnails.reduce((prev, current) => {
+        const prevArea = (prev.width || 0) * (prev.height || 0);
+        const currArea = (current.width || 0) * (current.height || 0);
+        return prevArea >= currArea ? prev : current;
+      });
+
+      if (bestThumb.url) {
+        videoFormats.push({
+          id: 'photo_highres',
+          quality: 'Original',
+          format: 'jpg',
+          size: null,
+          type: 'photo',
+          note: 'HD Image',
+          url: bestThumb.url
+        });
+      }
+    } else if (videoFormats.length === 0 && url.includes('instagram.com/p/')) {
+      // Absolute fallback for IG posts: use the single 'url' if available from yt-dlp metadata
+      if (data.url && !data.url.includes('instagram.com')) {
+        videoFormats.push({ id: 'photo_direct', quality: 'Original', format: 'jpg', size: null, type: 'photo', note: 'Image', url: data.url });
+      }
+    }
 
     // Dedup by quality+format+note
     const seen = new Set();
@@ -350,7 +406,9 @@ app.post("/formats", async (req, res) => {
 
   } catch (err) {
     console.error('Formats Error:', err.message);
-    const msg = "We were unable to analyze this video. It might be private, restricted, or the platform is blocking our request. Please check the URL and try again.";
+    const isPhotoUrl = url.includes('photo') || url.includes('/p/');
+    const typeLabel = isPhotoUrl ? "photo or post" : "video";
+    const msg = `We were unable to analyze this ${typeLabel}. It might be private, restricted, or the platform is blocking our request. Please check the URL and try again.`;
     res.status(500).json({ success: false, message: msg });
   }
 });
@@ -395,22 +453,27 @@ app.post("/download", async (req, res) => {
     const typeParam = isAudioOnly ? 'audio' : 'video';
     const formatSuffix = formatId.replace(/[^a-zA-Z0-9+]/g, '_');
     const filePath = path.join(tempDir, `${isAudioOnly ? 'audio' : 'video'}_${vidId}_${formatSuffix}.${ext}`);
-    const downloadUrl = `/video/${vidId}?format=${encodeURIComponent(formatId)}&type=${typeParam}&title=${encodeURIComponent(cleanTitle)}`;
+    // Pass the sanitized formatSuffix (not raw formatId) so /video/:videoId can reconstruct exact filename
+    const downloadUrl = `/video/${vidId}?format=${encodeURIComponent(formatSuffix)}&type=${typeParam}&title=${encodeURIComponent(cleanTitle)}`;
 
     // If file exists and is recent (less than 1 hour old), reuse it
     if (fs.existsSync(filePath)) {
-      const stats = fs.statSync(filePath);
-      const now = new Date().getTime();
-      const endTime = stats.mtime.getTime() + (60 * 60 * 1000);
-      if (now < endTime && stats.size > 10000) {
-        console.log(`Reusing existing file: ${filePath}`);
-        return res.json({
-          success: true,
-          video: downloadUrl,
-          message: "Download complete"
-        });
+      try {
+        const stats = await fs.promises.stat(filePath);
+        const now = new Date().getTime();
+        const endTime = stats.mtime.getTime() + (60 * 60 * 1000);
+        if (now < endTime && stats.size > 10000) {
+          console.log(`Reusing existing file: ${filePath}`);
+          return res.json({
+            success: true,
+            video: downloadUrl,
+            message: "Download complete"
+          });
+        }
+        await fs.promises.unlink(filePath);
+      } catch (e) {
+        // file might have been deleted by cleanup task already
       }
-      fs.unlinkSync(filePath);
     }
 
     console.log(`Downloading: ${cleanTitle} (${formatId})`);
@@ -460,10 +523,12 @@ app.get("/proxy-image", async (req, res) => {
     const targetUrl = req.query.url;
     if (!targetUrl) return res.status(400).send("No url");
 
-    // SSRF protection: only allow known CDN domains
+    // SSRF protection: only allow known CDN domains with strict suffix matching
     let parsedUrl;
     try { parsedUrl = new URL(targetUrl); } catch { return res.status(400).send("Invalid URL"); }
-    const isAllowed = ALLOWED_IMAGE_HOSTS.some(h => parsedUrl.hostname.includes(h));
+    const isAllowed = ALLOWED_IMAGE_HOSTS.some(h =>
+      parsedUrl.hostname === h || parsedUrl.hostname.endsWith('.' + h)
+    );
     if (!isAllowed) return res.status(403).send("Forbidden host");
 
     const response = await axios({
@@ -485,10 +550,11 @@ app.get("/proxy-image", async (req, res) => {
 
 // ─── /video/:videoId ───────────────────────────────────────────────────────
 app.get("/video/:videoId", (req, res) => {
-  const { videoId } = req.params;
-  const format = req.query.format || 'mp4';
-  const title = req.query.title || 'video';
-  const type = req.query.type || 'video';
+  // Path Sanitization to prevent traversal
+  const videoId = req.params.videoId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const format = (req.query.format || 'mp4').replace(/[^a-zA-Z0-9+_]/g, '');
+  const title = sanitizeFilename(req.query.title || 'video');
+  const type = (req.query.type || 'video').replace(/[^a-z]/g, '');
 
   let prefix = 'video';
   if (type === 'audio') prefix = 'audio';
@@ -520,7 +586,11 @@ app.get("/video/:videoId", (req, res) => {
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
     const downloadExt = (isIOS && type === 'video') ? 'mov' : ext;
 
-    res.header('Content-Disposition', `attachment; filename="${title}.${downloadExt}"`);
+    // Use RFC 5987 encoding for Content-Disposition to safely handle non-ASCII characters
+    // (e.g. emojis or unicode in X/Twitter/Instagram video titles)
+    const asciiTitle = title.replace(/[^\x20-\x7E]/g, '_').replace(/"/g, '_');
+    const encodedTitle = encodeURIComponent(`${title}.${downloadExt}`);
+    res.header('Content-Disposition', `attachment; filename="${asciiTitle}.${downloadExt}"; filename*=UTF-8''${encodedTitle}`);
     res.header('Content-Type', contentType);
     fs.createReadStream(filePath).pipe(res);
   } else {
@@ -544,7 +614,7 @@ setInterval(async () => {
     // 2. Default to downloader.online for production
     // 3. Fallback to localhost
     let host = process.env.RENDER_EXTERNAL_URL || 'https://downloader.online';
-    
+
     // In local development, always use localhost
     if (process.env.NODE_ENV !== 'production' && !process.env.RENDER_EXTERNAL_URL) {
       host = `http://localhost:${PORT}`;
@@ -555,7 +625,7 @@ setInterval(async () => {
       headers: { 'User-Agent': 'Render-Keep-Alive/1.0' },
       timeout: 10000
     });
-    
+
     logToFile(`[Keep-Alive] Self-ping successful: ${pingUrl}`);
     console.log(`[Keep-Alive] Self-ping successful at ${new Date().toISOString()}`);
   } catch (err) {
@@ -564,5 +634,27 @@ setInterval(async () => {
     console.error(errMsg);
   }
 }, 14 * 60 * 1000); // 14 minutes (Render sleep threshold is ~15 min)
+
+/**
+ * Temp directory cleanup task
+ * Deletes files older than 24 hours every 6 hours
+ */
+setInterval(async () => {
+  try {
+    const now = Date.now();
+    const files = await fs.promises.readdir(tempDir);
+    for (const file of files) {
+      const filePath = path.join(tempDir, file);
+      const stats = await fs.promises.stat(filePath);
+      const ageMs = now - stats.mtimeMs;
+      if (ageMs > 24 * 60 * 60 * 1000) {
+        await fs.promises.unlink(filePath);
+        logToFile(`[Cleanup] Deleted old file: ${file}`);
+      }
+    }
+  } catch (err) {
+    console.error('[Cleanup] Error:', err.message);
+  }
+}, 6 * 60 * 60 * 1000);
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

@@ -38,6 +38,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
 .logo-link {
@@ -82,9 +83,6 @@ body {
   padding: 0.3rem;
 }
 
-.header-content {
-  position: relative;
-}
 
 .header-nav .btn-extension {
   background-color: #f0f0f0;
@@ -213,6 +211,7 @@ body {
     font-size: 1.8rem;
     margin-bottom: 0.25rem;
   }
+
   .hero-subtitle {
     font-size: 1rem;
     margin-bottom: 1.5rem;
@@ -274,11 +273,6 @@ body {
   animation: pulse-border 3s infinite;
 }
 
-.search-box .btn-primary:hover {
-  transform: scale(1.02);
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
 
 .search-box .btn-primary:active {
   transform: scale(0.98);
@@ -297,6 +291,11 @@ body {
   gap: 2rem;
   margin-top: 1.5rem;
   flex-wrap: wrap;
+}
+
+.trust-container {
+  text-align: center;
+  width: 100%;
 }
 
 .badge-item {
@@ -318,9 +317,11 @@ body {
   0% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
@@ -405,9 +406,6 @@ body {
   cursor: pointer;
 }
 
-.btn-download:hover {
-  background-color: var(--primary-hover);
-}
 
 .format-select {
   background-color: #fcfcfc;
@@ -419,6 +417,48 @@ body {
   font-weight: 600;
   outline: none;
   font-size: 0.95rem;
+}
+
+/* Loading Effects */
+.loading-container {
+  display: none;
+  width: 100%;
+  max-width: 500px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 40%;
+  background-color: var(--primary);
+  position: absolute;
+  border-radius: 10px;
+  animation: progress-slide 1.5s infinite ease-in-out;
+}
+
+@keyframes progress-slide {
+  from {
+    left: -40%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* Promo Card */
@@ -466,7 +506,8 @@ body {
   text-align: center;
   margin: 0.5rem 0;
   font-weight: 700;
-  color: #e63946; /* Vibrant Red */
+  color: #e63946;
+  /* Vibrant Red */
   font-size: 1.25rem;
 }
 
@@ -552,7 +593,7 @@ body {
   background: white;
   padding: 2.5rem;
   border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease;
 }
 
@@ -572,7 +613,7 @@ body {
 .guide-image img {
   width: 100%;
   border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   display: block;
 }
 
@@ -593,7 +634,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.5px;
   margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .guide-info h3 {
@@ -619,7 +660,8 @@ body {
     gap: 2.5rem;
   }
 
-  .guide-step, .guide-step.reverse {
+  .guide-step,
+  .guide-step.reverse {
     flex-direction: column;
     gap: 2rem;
     padding: 1.5rem;
