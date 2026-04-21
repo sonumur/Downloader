@@ -27,8 +27,10 @@
             </a>
             <button id="mobileMenuToggle" class="mobile-menu-toggle" aria-label="Open menu"
                 aria-expanded="false">☰</button>
-            <nav class="header-nav">
+                        <nav class="header-nav">
                 <a href="/how-to-use">How to Use</a>
+                <a href="/faq">FAQ</a>
+                <a href="/about">About</a>
                 <a href="/platforms">Platforms</a>
                 <a href="/contact">Contact Us</a>
             </nav>
@@ -138,9 +140,7 @@
                 </div>
             </div>
             <div id="loadingContainer" class="loading-container" style="display: none;">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
+                <div class="modern-spinner"></div>
                 <p id="loadingText">Analyzing Link...</p>
             </div>
 
@@ -273,8 +273,13 @@
         let currentVideoData = null;
 
         function showStatus(msg, isError = false) {
+            if (!msg) {
+                statusEl.style.display = 'none';
+                return;
+            }
             statusEl.textContent = msg;
             statusEl.className = isError ? 'status error' : 'status';
+            statusEl.style.display = 'block';
         }
 
         function formatTime(seconds) {
@@ -302,6 +307,7 @@
                 searchWrapper.classList.add('hidden');
                 loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
+                document.getElementById('loadingText').textContent = 'Analyzing Link...';
                 showStatus('');
 
                 const res = await fetch('/formats', {
@@ -373,7 +379,11 @@
             }
 
             try {
-                showStatus('Processing download... this may take a bit.');
+                document.querySelector('.search-wrapper').classList.add('hidden');
+                document.getElementById('loadingText').textContent = 'Processing Download...';
+                document.getElementById('loadingContainer').style.display = 'block';
+                videoCard.style.display = 'none';
+                showStatus('');
                 finalDownloadBtn.disabled = true;
 
                 const formatId = formatSelect.value;
@@ -398,10 +408,12 @@
                     return;
                 }
 
+                document.getElementById('loadingContainer').style.display = 'none';
                 showStatus('Download ready!');
                 // Trigger browser download
                 window.location.href = data.video;
             } catch (err) {
+                document.getElementById('loadingContainer').style.display = 'none';
                 showStatus('Download failed.', true);
             } finally {
                 finalDownloadBtn.disabled = false;

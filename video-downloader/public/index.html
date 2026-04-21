@@ -29,11 +29,11 @@
                 aria-expanded="false">☰</button>
             <nav class="header-nav">
                 <a href="/how-to-use">How to Use</a>
+                <a href="/faq">FAQ</a>
+                <a href="/about">About</a>
                 <a href="/platforms">Platforms</a>
-                
                 <a href="/contact">Contact Us</a>
             </nav>
-
         </div>
     </header>
 
@@ -41,7 +41,8 @@
     <main class="main-content">
         <section class="hero-section">
             <h1 class="hero-title">Free Online Video Downloader</h1>
-            <p class="hero-subtitle">Online downloader.online downloader app platform allows you to download videos instantly from Instagram, TikTok, Facebook, Twitter, and more in HD quality.</p>
+            <p class="hero-subtitle">Online downloader.online downloader app platform allows you to download videos
+                instantly from Instagram, TikTok, Facebook, Twitter, and more in HD quality.</p>
 
             <!-- Feature Icons -->
             <div class="feature-icons-container">
@@ -131,7 +132,6 @@
                     </div>
                     <span class="feature-label">Twitter / X</span>
                 </a>
-
             </div>
 
             <div class="search-wrapper">
@@ -140,9 +140,14 @@
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
+
+            <!-- ANIMATION PROGRESS BAR -->
             <div id="loadingContainer" class="loading-container" style="display: none;">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
+                <div class="anim-bar-wrapper">
+                    <div class="anim-bar-track">
+                        <div id="animBarFill" class="anim-bar-fill"></div>
+                    </div>
+                    <div class="anim-bar-glow"></div>
                 </div>
                 <p id="loadingText">Analyzing Link...</p>
             </div>
@@ -176,19 +181,22 @@
                     and agree to use this tool only for content you own or have permission to download.</p>
                 <div class="trust-badges">
                     <div class="badge-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
                         <span>Safe & Secure</span>
                     </div>
                     <div class="badge-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <path d="m5 12 5 5L20 7"></path>
                         </svg>
                         <span>No Watermark</span>
                     </div>
                     <div class="badge-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -219,7 +227,9 @@
                         <div class="guide-info">
                             <div class="step-badge">Step 1</div>
                             <h3>Copy the Video URL</h3>
-                            <p>Browse your favorite social media platforms (Instagram, TikTok, FB, or Twitter) and find the content you love. Tap <strong>Share</strong> and then <strong>Copy Link</strong>.</p>
+                            <p>Browse your favorite social media platforms (Instagram, TikTok, FB, or Twitter) and find
+                                the content you love. Tap <strong>Share</strong> and then <strong>Copy Link</strong>.
+                            </p>
                         </div>
                         <div class="guide-image">
                             <img src="reels1.png" alt="Step 1: Copy Link">
@@ -230,7 +240,9 @@
                         <div class="guide-info">
                             <div class="step-badge">Step 2</div>
                             <h3>Paste the Link</h3>
-                            <p>Head to <strong>downloader.online</strong> and paste your link into the input field at the top. Click <strong>Download</strong> and wait for our high-speed engine to analyze the content.</p>
+                            <p>Head to <strong>downloader.online</strong> and paste your link into the input field at
+                                the top. Click <strong>Download</strong> and wait for our high-speed engine to analyze
+                                the content.</p>
                         </div>
                         <div class="guide-image">
                             <img src="reels2.png" alt="Step 2: Paste Link">
@@ -241,7 +253,8 @@
                         <div class="guide-info">
                             <div class="step-badge">Step 3</div>
                             <h3>Choose Format & Save</h3>
-                            <p>Choose from multiple qualities (like 720p, 1080p, or 4K) and click the download button. Your file will be saved instantly with **No Watermarks**.</p>
+                            <p>Choose from multiple qualities (like 720p, 1080p, or 4K) and click the download button.
+                                Your file will be saved instantly with **No Watermarks**.</p>
                         </div>
                         <div class="guide-image">
                             <img src="reels3.png" alt="Step 3: Save Content">
@@ -250,17 +263,32 @@
                 </div>
 
                 <div class="features-divider"></div>
-<div class="seo-content"><h2>The Best Free Video Downloader App Online</h2>
-                    <p>downloader.online is a completely free, lightning-fast web service that allows you to download videos safely and securely. Whether you want to save a viral TikTok without a watermark, an inspiring Instagram Reel, a Facebook Watch video, or a high-quality Twitter (X) clip, downloader.online provides the highest quality MP4 and MP3 files instantly.</p>
-                    <p>Looking for a reliable <strong>Vidmate alternative</strong> or <strong>Vidsaved alternative</strong>? Our ultimate <strong>online downloader</strong> app platform at downloaderonline supports all major social networks, and we are constantly adding new features like future support for the <strong>Sora video downloader</strong> format. Get your content offline faster than ever.</p>
+                <div class="seo-content">
+                    <h2>The Best Free Video Downloader App Online</h2>
+                    <p>downloader.online is a completely free, lightning-fast web service that allows you to download
+                        videos safely and securely. Whether you want to save a viral TikTok without a watermark, an
+                        inspiring Instagram Reel, a Facebook Watch video, or a high-quality Twitter (X) clip,
+                        downloader.online provides the highest quality MP4 and MP3 files instantly.</p>
+                    <p>Looking for a reliable <strong>Vidmate alternative</strong> or <strong>Vidsaved
+                            alternative</strong>? Our ultimate <strong>online downloader</strong> app platform at
+                        downloaderonline supports all major social networks, and we are constantly adding new features
+                        like future support for the <strong>Sora video downloader</strong> format. Get your content
+                        offline faster than ever.</p>
 
                     <h2>Why choose downloader.online?</h2>
-                    <p>With countless video downloader tools available, finding one that is pristine, fast, and constantly updated can be difficult. downloader.online solves this by doing the complex media processing entirely on our dedicated backend computing engines.</p>
+                    <p>With countless video downloader tools available, finding one that is pristine, fast, and
+                        constantly updated can be difficult. downloader.online solves this by doing the complex media
+                        processing entirely on our dedicated backend computing engines.</p>
                     <ul>
-                        <li><strong>Absolutely no software installation:</strong> You don't need to install any suspicious desktop applications. Everything works natively in your web browser.</li>
-                        <li><strong>Free forever with no limits:</strong> Convert and download as many videos as you'd like. There are no paywalls or hidden membership fees.</li>
-                        <li><strong>Ultimate High-Definition Quality:</strong> We automatically extract and combine the absolute highest maximum resolution available directly from the source servers, including 720p, 1080p, 2K, and 4K resolutions.</li>
-                        <li><strong>Cross-Platform Compatibility:</strong> Access downloader.online flawlessly on your PC, Windows, Mac, Android smartphone, or Apple iOS iPhone device.</li>
+                        <li><strong>Absolutely no software installation:</strong> You don't need to install any
+                            suspicious desktop applications. Everything works natively in your web browser.</li>
+                        <li><strong>Free forever with no limits:</strong> Convert and download as many videos as you'd
+                            like. There are no paywalls or hidden membership fees.</li>
+                        <li><strong>Ultimate High-Definition Quality:</strong> We automatically extract and combine the
+                            absolute highest maximum resolution available directly from the source servers, including
+                            720p, 1080p, 2K, and 4K resolutions.</li>
+                        <li><strong>Cross-Platform Compatibility:</strong> Access downloader.online flawlessly on your
+                            PC, Windows, Mac, Android smartphone, or Apple iOS iPhone device.</li>
                     </ul>
 
                     <h2>Popular Tools</h2>
@@ -275,7 +303,12 @@
                     </ul>
 
                     <h2>Download Videos Without Watermarks</h2>
-                    <p>Unlike other downloaders that fail, restrict your downloads, or embed their own logos, our tool returns the source media exactly as the creator uploaded it. Simply copy the link from your favorite app (click Share > Copy Link), paste it securely into our search bar at the very top of this page, and select the exact video or audio format you desire. Our system instantly proxies the media and begins your download.</p></div>
+                    <p>Unlike other downloaders that fail, restrict your downloads, or embed their own logos, our tool
+                        returns the source media exactly as the creator uploaded it. Simply copy the link from your
+                        favorite app (click Share > Copy Link), paste it securely into our search bar at the very top of
+                        this page, and select the exact video or audio format you desire. Our system instantly proxies
+                        the media and begins your download.</p>
+                </div>
             </div>
         </section>
     </main>
@@ -292,9 +325,8 @@
             </div>
         </div>
     </footer>
-    
 
-<script>
+    <script>
         const urlInput = document.getElementById('url');
         const downloadBtn = document.getElementById('downloadBtn');
         const statusEl = document.getElementById('status');
@@ -304,8 +336,13 @@
         const videoDuration = document.getElementById('videoDuration');
         const formatSelect = document.getElementById('formatSelect');
         const finalDownloadBtn = document.getElementById('finalDownloadBtn');
+        const animBarFill = document.getElementById('animBarFill');
 
         let currentVideoData = null;
+
+        function setBar(pct) {
+            if (animBarFill) animBarFill.style.width = pct + '%';
+        }
 
         function selectFeature(feature) {
             urlInput.focus();
@@ -319,18 +356,20 @@
                 'TikTok': 'Paste TikTok link here...',
                 'Twitter': 'Paste Twitter / X link here...'
             };
-
             urlInput.placeholder = placeholders[feature] || 'Paste your video link here';
-
-            // Subtle pulse effect on input
             urlInput.classList.remove('pulse-input');
-            void urlInput.offsetWidth; // trigger reflow
+            void urlInput.offsetWidth;
             urlInput.classList.add('pulse-input');
         }
 
         function showStatus(msg, isError = false) {
+            if (!msg) {
+                statusEl.style.display = 'none';
+                return;
+            }
             statusEl.textContent = msg;
             statusEl.className = isError ? 'status error' : 'status';
+            statusEl.style.display = 'block';
         }
 
         function formatTime(seconds) {
@@ -351,14 +390,16 @@
             }
 
             try {
-                // UI Changes: Hide search, show loading
                 const searchWrapper = document.querySelector('.search-wrapper');
                 const loadingContainer = document.getElementById('loadingContainer');
-                
+
                 searchWrapper.classList.add('hidden');
                 loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
+                document.getElementById('loadingText').textContent = 'Analyzing Link...';
                 showStatus('');
+                setBar(0);
+                setTimeout(() => setBar(65), 100);
 
                 const res = await fetch('/formats', {
                     method: 'POST',
@@ -367,9 +408,10 @@
                 });
 
                 const data = await res.json();
+                setBar(100);
+
                 if (!data.success) {
                     showStatus(data.message, true);
-                    // Show search again on error
                     searchWrapper.classList.remove('hidden');
                     loadingContainer.style.display = 'none';
                     return;
@@ -377,12 +419,10 @@
 
                 currentVideoData = data;
                 displayVideoInfo(data);
-                
-                // Hide loading, show results
-                loadingContainer.style.display = 'none';
+
+                setTimeout(() => { loadingContainer.style.display = 'none'; }, 400);
             } catch (err) {
                 showStatus('Failed to connect to server.', true);
-                // Show search again on error
                 document.querySelector('.search-wrapper').classList.remove('hidden');
                 document.getElementById('loadingContainer').style.display = 'none';
             } finally {
@@ -400,14 +440,13 @@
             videoTitle.textContent = data.title || "Video Download";
             videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
-            // Populate formats
             formatSelect.innerHTML = '';
             const allFormats = [...data.formats.video, ...data.formats.audio];
 
             allFormats.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
-                opt.dataset.type = f.type; // Store type
+                opt.dataset.type = f.type;
                 let typeLabel = 'MP4';
                 if (f.type === 'audio') typeLabel = 'MP3';
                 if (f.type === 'photo') typeLabel = 'PHOTO';
@@ -429,10 +468,14 @@
             }
 
             try {
-                showStatus('Processing download... this may take a bit.');
+                document.querySelector('.search-wrapper').classList.add('hidden');
+                document.getElementById('loadingText').textContent = 'Processing Download...';
+                document.getElementById('loadingContainer').style.display = 'block';
+                videoCard.style.display = 'none';
+                showStatus('');
                 finalDownloadBtn.disabled = true;
+                setBar(30);
 
-                const formatId = formatSelect.value;
                 const formatType = formatSelect.options[formatSelect.selectedIndex].dataset.type;
 
                 const res = await fetch('/download', {
@@ -441,7 +484,7 @@
                     body: JSON.stringify({
                         url: urlInput.value.trim(),
                         formatId: formatId,
-                        type: formatType, // Pass type
+                        type: formatType,
                         videoId: currentVideoData?.videoId,
                         title: currentVideoData?.title,
                         photoUrl: currentVideoData?.formats?.video?.find(f => f.id === formatId)?.url || currentVideoData?.photoUrl
@@ -449,15 +492,20 @@
                 });
 
                 const data = await res.json();
+                setBar(100);
+
                 if (!data.success) {
                     showStatus(data.message, true);
                     return;
                 }
 
-                showStatus('Download ready!');
-                // Trigger browser download
-                window.location.href = data.video;
+                setTimeout(() => {
+                    document.getElementById('loadingContainer').style.display = 'none';
+                    showStatus('Download ready!');
+                    window.location.href = data.video;
+                }, 400);
             } catch (err) {
+                document.getElementById('loadingContainer').style.display = 'none';
                 showStatus('Download failed.', true);
             } finally {
                 finalDownloadBtn.disabled = false;

@@ -1063,3 +1063,98 @@ body {
     padding: 0 0.75rem;
   }
 }
+
+/* =============================================
+   PREMIUM ANIMATION BAR — Loading Progress
+   ============================================= */
+
+.loading-container {
+  width: 100%;
+  max-width: 580px;
+  margin: 2.5rem auto 1.5rem;
+  text-align: center;
+}
+
+.anim-bar-wrapper {
+  position: relative;
+  padding: 10px 0 28px;
+}
+
+/* The track (background rail) */
+.anim-bar-track {
+  height: 22px;
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 100px;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* The fill — animates width via JS, gradient + shimmer */
+.anim-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  background-size: 200% 100%;
+  border-radius: 100px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  animation: bar-shimmer 2s linear infinite;
+}
+
+/* Moving shine inside the bar */
+.anim-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  animation: bar-shine 1.8s linear infinite;
+  border-radius: 100px;
+}
+
+/* Soft glow BELOW the bar */
+.anim-bar-glow {
+  position: absolute;
+  bottom: 10px; left: 5%; right: 5%;
+  height: 28px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+  filter: blur(18px);
+  opacity: 0.5;
+  border-radius: 100px;
+  z-index: 1;
+  animation: glow-breathe 2s ease-in-out infinite alternate;
+}
+
+/* Keyframes */
+@keyframes bar-shimmer {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes bar-shine {
+  0%   { left: -60%; }
+  100% { left: 110%; }
+}
+
+@keyframes glow-breathe {
+  from { opacity: 0.2; transform: scaleX(0.95); }
+  to   { opacity: 0.5; transform: scaleX(1.05); }
+}
+
+/* Loading text pulse */
+#loadingText {
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #6366f1;
+  animation: text-fade 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes text-fade {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}

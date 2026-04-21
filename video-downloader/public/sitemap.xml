@@ -59,7 +59,17 @@
   <!-- Information Pages -->
   <url>
     <loc>https://downloader.online/how-to-use</loc>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://downloader.online/faq</loc>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://downloader.online/about</loc>
+    <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
