@@ -430,30 +430,41 @@ body {
 
 .progress-bar {
   width: 100%;
-  height: 6px;
-  background-color: #eee;
-  border-radius: 10px;
+  height: 28px;
+  background-color: #d1d5db;
+  border: 1px solid #111;
+  border-radius: 0;
   overflow: hidden;
   position: relative;
   margin-bottom: 1rem;
+  padding: 3px;
 }
 
 .progress-fill {
   height: 100%;
-  width: 40%;
-  background-color: var(--primary);
+  width: 0%;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to right,
+    #0f172a 0px,
+    #0f172a 14px,
+    transparent 14px,
+    transparent 18px
+  );
   position: absolute;
-  border-radius: 10px;
-  animation: progress-slide 1.5s infinite ease-in-out;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  animation: retro-fill 1.5s infinite ease-in-out;
 }
 
-@keyframes progress-slide {
-  from {
-    left: -40%;
+@keyframes retro-fill {
+  0% {
+    width: 0%;
   }
 
-  to {
-    left: 100%;
+  100% {
+    width: 100%;
   }
 }
 
