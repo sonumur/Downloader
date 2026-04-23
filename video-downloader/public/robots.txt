@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Allow: /admin/js/firebase-config.js
 Disallow: /admin
 Sitemap: https://downloader.online/sitemap.xml
