@@ -160,7 +160,7 @@ app.use((req, res, next) => {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
     "frame-src https://*.adtrafficquality.google https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://www.googletagmanager.com https://www.googletagservices.com",
-    "connect-src 'self' https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com",
+    "connect-src 'self' https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com https://www.gstatic.com https://*.firebasejs.map",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "object-src 'none'",
@@ -409,7 +409,7 @@ app.post("/formats", async (req, res) => {
     const isPhotoUrl = url.includes('photo') || url.includes('/p/');
     const typeLabel = isPhotoUrl ? "photo or post" : "video";
     const msg = `We were unable to analyze this ${typeLabel}. It might be private, restricted, or the platform is blocking our request. Please check the URL and try again.`;
-    res.status(500).json({ success: false, message: msg });
+    res.status(422).json({ success: false, message: msg });
   }
 });
 

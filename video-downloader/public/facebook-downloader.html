@@ -49,7 +49,8 @@
             <p class="hero-subtitle">Download Facebook videos online in high quality (MP4) for free. Simple and fast FB video saver.</p>
 
             <!-- Feature Icons -->
-            <div class="feature-icons-container">
+            
+            <div class="feature-icons-wrapper"><div class="feature-icons-container">
                 <a href="/instagram-reels-downloader" class="feature-item">
                     <div class="icon-box icon-reels">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -138,15 +139,20 @@
 
             </div>
 
+            </div>
             <div class="search-wrapper">
                 <div class="search-box">
                     <input type="text" id="url" placeholder="Paste Facebook video link here" autofocus>
                     <button class="btn-primary" id="downloadBtn">Download</button>
                 </div>
             </div>
+                        <!-- ANIMATION PROGRESS BAR -->
             <div id="loadingContainer" class="loading-container" style="display: none;">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
+                <div class="anim-bar-wrapper">
+                    <div class="anim-bar-track">
+                        <div id="animBarFill" class="anim-bar-fill"></div>
+                    </div>
+                    <div class="anim-bar-glow"></div>
                 </div>
                 <p id="loadingText">Analyzing Link...</p>
             </div>
@@ -312,7 +318,13 @@
         const formatSelect = document.getElementById('formatSelect');
         const finalDownloadBtn = document.getElementById('finalDownloadBtn');
 
+                const animBarFill = document.getElementById('animBarFill');
+
         let currentVideoData = null;
+
+        function setBar(pct) {
+            if (animBarFill) animBarFill.style.width = pct + '%';
+        }
 
         function showStatus(msg, isError = false) {
             if (!msg) {
@@ -334,7 +346,7 @@
                 .join(':');
         }
 
-        async function fetchFormats() {
+                        async function fetchFormats() {
             const url = urlInput.value.trim();
             if (!url) {
                 showStatus('Please paste a video URL.', true);
@@ -342,15 +354,16 @@
             }
 
             try {
-                // UI Changes: Hide search, show loading
                 const searchWrapper = document.querySelector('.search-wrapper');
                 const loadingContainer = document.getElementById('loadingContainer');
-                
+
                 searchWrapper.classList.add('hidden');
                 loadingContainer.style.display = 'block';
                 videoCard.style.display = 'none';
                 document.getElementById('loadingText').textContent = 'Analyzing Link...';
                 showStatus('');
+                setBar(0);
+                setTimeout(() => setBar(65), 100);
 
                 const res = await fetch('/formats', {
                     method: 'POST',
@@ -359,9 +372,10 @@
                 });
 
                 const data = await res.json();
+                setBar(100);
+
                 if (!data.success) {
                     showStatus(data.message, true);
-                    // Show search again on error
                     searchWrapper.classList.remove('hidden');
                     loadingContainer.style.display = 'none';
                     return;
@@ -369,12 +383,10 @@
 
                 currentVideoData = data;
                 displayVideoInfo(data);
-                
-                // Hide loading, show results
-                loadingContainer.style.display = 'none';
+
+                setTimeout(() => { loadingContainer.style.display = 'none'; }, 400);
             } catch (err) {
                 showStatus('Failed to connect to server.', true);
-                // Show search again on error
                 document.querySelector('.search-wrapper').classList.remove('hidden');
                 document.getElementById('loadingContainer').style.display = 'none';
             } finally {
@@ -392,14 +404,13 @@
             videoTitle.textContent = data.title || "Video Download";
             videoDuration.textContent = data.duration ? formatTime(data.duration) : '';
 
-            // Populate formats
             formatSelect.innerHTML = '';
             const allFormats = [...data.formats.video, ...data.formats.audio];
 
             allFormats.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
-                opt.dataset.type = f.type; // Store type
+                opt.dataset.type = f.type;
                 let typeLabel = 'MP4';
                 if (f.type === 'audio') typeLabel = 'MP3';
                 if (f.type === 'photo') typeLabel = 'PHOTO';
@@ -427,8 +438,8 @@
                 videoCard.style.display = 'none';
                 showStatus('');
                 finalDownloadBtn.disabled = true;
+                setBar(30);
 
-                const formatId = formatSelect.value;
                 const formatType = formatSelect.options[formatSelect.selectedIndex].dataset.type;
 
                 const res = await fetch('/download', {
@@ -437,7 +448,7 @@
                     body: JSON.stringify({
                         url: urlInput.value.trim(),
                         formatId: formatId,
-                        type: formatType, // Pass type
+                        type: formatType,
                         videoId: currentVideoData?.videoId,
                         title: currentVideoData?.title,
                         photoUrl: currentVideoData?.formats?.video?.find(f => f.id === formatId)?.url || currentVideoData?.photoUrl
@@ -445,15 +456,18 @@
                 });
 
                 const data = await res.json();
+                setBar(100);
+
                 if (!data.success) {
                     showStatus(data.message, true);
                     return;
                 }
 
-                document.getElementById('loadingContainer').style.display = 'none';
-                showStatus('Download ready!');
-                // Trigger browser download
-                window.location.href = data.video;
+                setTimeout(() => {
+                    document.getElementById('loadingContainer').style.display = 'none';
+                    showStatus('Download ready!');
+                    window.location.href = data.video;
+                }, 400);
             } catch (err) {
                 document.getElementById('loadingContainer').style.display = 'none';
                 showStatus('Download failed.', true);
