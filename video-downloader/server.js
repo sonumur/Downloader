@@ -155,12 +155,15 @@ app.set("trust proxy", true);
 app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://www.gstatic.com https://www.google.com https://*.adtrafficquality.google",
+    // AdSense requires: pagead2, partner, tpc, adservice, gstatic, google, adtrafficquality, fundingchoicesmessages (GDPR CMP)
+    "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://www.gstatic.com https://www.google.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    "frame-src https://*.adtrafficquality.google https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://www.googletagmanager.com https://www.googletagservices.com",
-    "connect-src 'self' https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com https://www.gstatic.com https://*.firebasejs.map",
+    // doubleclick.net (wildcard) needed for AdSense measurement iframes
+    "frame-src https://*.adtrafficquality.google https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://www.googletagmanager.com https://www.googletagservices.com https://fundingchoicesmessages.google.com",
+    // cm.g.doubleclick.net and stats.g.doubleclick.net needed for ad measurement/frequency capping
+    "connect-src 'self' https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com https://www.gstatic.com https://fundingchoicesmessages.google.com https://*.firebasejs.map",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "object-src 'none'",
