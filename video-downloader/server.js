@@ -243,6 +243,43 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
+// ─── Shared Public API ───────────────────────────────────────────────────
+app.get("/api/settings", async (req, res) => {
+  try {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const apiKey = process.env.FIREBASE_API_KEY;
+    if (!projectId || !apiKey) {
+      return res.status(500).json({ success: false, message: "Missing Firebase configuration" });
+    }
+    
+    // Fetch settings/site document from Firestore REST API
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/settings/site?key=${apiKey}`;
+    const response = await axios.get(url);
+    
+    const rawData = response.data.fields || {};
+    // Extract values from Firestore REST format (e.g., { "stringValue": "..." })
+    const settings = {};
+    for (const key in rawData) {
+      const val = rawData[key];
+      if (val.stringValue !== undefined) settings[key] = val.stringValue;
+      else if (val.integerValue !== undefined) settings[key] = parseInt(val.integerValue);
+      else if (val.booleanValue !== undefined) settings[key] = val.booleanValue;
+      else if (val.mapValue !== undefined) {
+          // Handle simple JSON maps for Banner Zones
+          const map = {};
+          const fields = val.mapValue.fields || {};
+          for (const mk in fields) map[mk] = fields[mk].stringValue || fields[mk].integerValue || fields[mk].booleanValue;
+          settings[key] = map;
+      }
+    }
+    
+    res.json({ success: true, settings });
+  } catch (err) {
+    console.error("Error fetching settings:", err.message);
+    res.status(500).json({ success: false, message: "Failed to load settings" });
+  }
+});
+
 // Redirect trailing slashes to clean URLs (except root and admin)
 app.use((req, res, next) => {
   if (req.path !== '/' && req.path.endsWith('/') && !req.path.startsWith('/admin/')) {

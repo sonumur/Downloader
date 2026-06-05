@@ -34,23 +34,39 @@ function injectScript(tag, container = document.body) {
   });
 }
 
-(function loadMonetag() {
-  console.log("[Monetag] Initializing ad loader...");
-  
-  // Load Vignette
-  if (typeof MONETAG_VIGNETTE_TAG !== 'undefined' && MONETAG_VIGNETTE_TAG) {
-    console.log("[Monetag] Loading Vignette...");
-    injectScript(MONETAG_VIGNETTE_TAG);
+(async function loadMonetag() {
+  console.log("[Monetag] Fetching dynamic configuration...");
+  let vignetteId = "11104764"; // Default fallback
+  let bannerZones = {};
+
+  try {
+    const response = await fetch('/api/settings');
+    const data = await response.json();
+    if (data.success && data.settings) {
+      if (data.settings.monetagVignetteId) vignetteId = data.settings.monetagVignetteId;
+      if (data.settings.monetagBannerZones) {
+        try {
+          bannerZones = typeof data.settings.monetagBannerZones === 'string' 
+            ? JSON.parse(data.settings.monetagBannerZones) 
+            : data.settings.monetagBannerZones;
+        } catch(e) { console.error("[Monetag] Error parsing banner JSON", e); }
+      }
+      console.log("[Monetag] Configuration loaded from server.");
+    }
+  } catch (err) {
+    console.warn("[Monetag] Failed to fetch server settings, using defaults.", err);
   }
+
+  // Load Vignette
+  console.log(`[Monetag] Loading Vignette ${vignetteId}...`);
+  injectScript(`<script>(function(s){s.dataset.zone='${vignetteId}',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>`);
 
   // Load Banners into slots
   const slots = document.querySelectorAll('.monetag-ad-slot');
   if (slots.length > 0) {
     console.log(`[Monetag] Found ${slots.length} ad slots.`);
     slots.forEach((slot, index) => {
-        // Here you can add logic to match slot IDs or categories
-        // For now, it's ready for manual ID insertion in MONETAG_BANNER_ZONES
-        const zoneId = MONETAG_BANNER_ZONES[slot.id] || MONETAG_BANNER_ZONES['default'];
+        const zoneId = bannerZones[slot.id] || bannerZones['default'];
         if (zoneId) {
             console.log(`[Monetag] Injecting banner for zone ${zoneId} into slot ${index}`);
             const bannerTag = `<script data-cfasync="false" src="//n6wxm.com/vignette.min.js?z=${zoneId}"></script>`;
