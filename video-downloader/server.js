@@ -238,9 +238,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
-// Redirect trailing slashes to clean URLs (except root)
+// Redirect trailing slashes to clean URLs (except root and admin)
 app.use((req, res, next) => {
-  if (req.path !== '/' && req.path.endsWith('/')) {
+  if (req.path !== '/' && req.path.endsWith('/') && !req.path.startsWith('/admin/')) {
     const query = req.url.slice(req.path.length);
     const safepath = req.path.slice(0, -1).replace(/\/+/g, '/');
     return res.redirect(301, safepath + query);
