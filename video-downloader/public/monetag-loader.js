@@ -45,11 +45,19 @@ function injectScript(tag, container = document.body) {
     if (data.success && data.settings) {
       if (data.settings.monetagVignetteId) vignetteId = data.settings.monetagVignetteId;
       if (data.settings.monetagBannerZones && data.settings.monetagBannerZones !== "") {
+        const rawZones = data.settings.monetagBannerZones;
         try {
-          bannerZones = typeof data.settings.monetagBannerZones === 'string' 
-            ? JSON.parse(data.settings.monetagBannerZones) 
-            : data.settings.monetagBannerZones;
-        } catch(e) { console.error("[Monetag] Error parsing banner JSON", e); }
+          // 1. Try to parse as JSON first
+          bannerZones = typeof rawZones === 'string' ? JSON.parse(rawZones) : rawZones;
+        } catch(e) { 
+          // 2. If it's not JSON, it might just be a single ID string
+          if (typeof rawZones === 'string' && rawZones.trim().length > 0) {
+            console.log("[Monetag] Input is not JSON, treating as single default ID.");
+            bannerZones = { "default": rawZones.trim() };
+          } else {
+            console.error("[Monetag] Error parsing banner configuration", e);
+          }
+        }
       }
       console.log("[Monetag] Configuration loaded from server.");
     }
