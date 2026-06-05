@@ -1,2 +1,1 @@
-google.com, pub-2207409421620882, DIRECT, f08c47fec0942fa0
 # Paste any ads.txt lines provided by Monetag below this line.

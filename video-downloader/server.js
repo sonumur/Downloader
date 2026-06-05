@@ -1,9 +1,35 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 const axios = require("axios");
 const cors = require("cors");
 const path = require("path");
 const fs = require('fs');
+
+const app = express();
+
+// Rate limiting: 100 requests per 15 minutes for the API
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." }
+});
+
+// Stricter rate limit for /formats and /download (15 requests per 15 minutes)
+const downloaderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many download requests. Please wait a while before your next download." }
+});
+
+app.use(limiter);
+app.use("/formats", downloaderLimiter);
+app.use("/download", downloaderLimiter);
+
 const { spawnSync } = require('child_process');
 const ffmpeg = require('ffmpeg-static');
 
@@ -145,7 +171,6 @@ async function runYtDlpAsync(args, timeoutMs = 30000) {
 
 // Removed old sync runYtDlp
 
-const app = express();
 const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, "public");
 const sitemapPath = path.join(publicDir, "sitemap.xml");
@@ -167,15 +192,13 @@ app.use((req, res, next) => {
   const extraCspSources = getExtraCspSources();
   const csp = [
     "default-src 'self'",
-    // AdSense requires: pagead2, partner, tpc, adservice, gstatic, google, adtrafficquality, fundingchoicesmessages (GDPR CMP)
-    `script-src 'self' 'unsafe-inline' https://n6wxm.com https://my.rtmk.net https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://www.gstatic.com https://www.google.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com https://www.googletagmanager.com ${extraCspSources}`,
+    // Monetag and base requirements
+    `script-src 'self' 'unsafe-inline' https://n6wxm.com https://my.rtmk.net https://www.gstatic.com https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    // doubleclick.net (wildcard) needed for AdSense measurement iframes
-    `frame-src https://n6wxm.com https://my.rtmk.net https://*.adtrafficquality.google https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://www.googletagmanager.com https://www.googletagservices.com https://fundingchoicesmessages.google.com ${extraCspSources}`,
-    // cm.g.doubleclick.net and stats.g.doubleclick.net needed for ad measurement/frequency capping
-    `connect-src 'self' https://n6wxm.com https://my.rtmk.net https://*.adtrafficquality.google https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://adservice.google.com https://partner.googleadservices.com https://www.googletagmanager.com https://www.googletagservices.com https://www.gstatic.com https://fundingchoicesmessages.google.com https://*.firebasejs.map ${extraCspSources}`,
+    `frame-src https://n6wxm.com https://my.rtmk.net https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
+    `connect-src 'self' https://n6wxm.com https://my.rtmk.net https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://*.firebasejs.map ${extraCspSources}`,
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "object-src 'none'",
