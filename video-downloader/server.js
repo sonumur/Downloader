@@ -249,15 +249,18 @@ app.get("/api/settings", async (req, res) => {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const apiKey = process.env.FIREBASE_API_KEY;
     if (!projectId || !apiKey) {
+      console.error("[Settings API] Missing Firebase configuration in env");
       return res.status(500).json({ success: false, message: "Missing Firebase configuration" });
     }
     
     // Fetch settings/site document from Firestore REST API
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/settings/site?key=${apiKey}`;
-    const response = await axios.get(url);
+    console.log(`[Settings API] Fetching from: ${url.replace(apiKey, 'REDACTED')}`);
     
+    const response = await axios.get(url);
     const rawData = response.data.fields || {};
-    // Extract values from Firestore REST format (e.g., { "stringValue": "..." })
+    
+    // Extract values from Firestore REST format
     const settings = {};
     for (const key in rawData) {
       const val = rawData[key];
@@ -265,18 +268,23 @@ app.get("/api/settings", async (req, res) => {
       else if (val.integerValue !== undefined) settings[key] = parseInt(val.integerValue);
       else if (val.booleanValue !== undefined) settings[key] = val.booleanValue;
       else if (val.mapValue !== undefined) {
-          // Handle simple JSON maps for Banner Zones
           const map = {};
           const fields = val.mapValue.fields || {};
-          for (const mk in fields) map[mk] = fields[mk].stringValue || fields[mk].integerValue || fields[mk].booleanValue;
+          for (const mk in fields) {
+            const mv = fields[mk];
+            map[mk] = mv.stringValue !== undefined ? mv.stringValue : (mv.integerValue || mv.booleanValue || "");
+          }
           settings[key] = map;
       }
     }
     
+    console.log("[Settings API] Successfully loaded settings");
     res.json({ success: true, settings });
   } catch (err) {
-    console.error("Error fetching settings:", err.message);
-    res.status(500).json({ success: false, message: "Failed to load settings" });
+    const status = err.response ? err.response.status : 500;
+    const errorData = err.response ? JSON.stringify(err.response.data) : err.message;
+    console.error(`[Settings API] Error ${status}:`, errorData);
+    res.status(status).json({ success: false, message: "Failed to load settings", error: err.message });
   }
 });
 
