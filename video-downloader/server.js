@@ -8,10 +8,10 @@ const fs = require('fs');
 
 const app = express();
 
-// Rate limiting: 100 requests per 15 minutes for the API
+// Rate limiting: 500 requests per 15 minutes for the API
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 500, // Increased limit to 500
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." }
@@ -26,7 +26,12 @@ const downloaderLimiter = rateLimit({
   message: { success: false, message: "Too many download requests. Please wait a while before your next download." }
 });
 
-app.use(limiter);
+// Apply global limiter but skip it for the /admin area
+app.use((req, res, next) => {
+  if (req.path.startsWith('/admin')) return next();
+  limiter(req, res, next);
+});
+
 app.use("/formats", downloaderLimiter);
 app.use("/download", downloaderLimiter);
 
