@@ -23,11 +23,14 @@ console.log('Using yt-dlp binary:', ytDlpPath);
 
 function logToFile(msg) {
   const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
-  fs.appendFile(path.join(__dirname, 'server.log'), logMsg, (err) => {
-    if (err) console.error('Failed to write to server.log:', err);
-  });
+  try {
+    fs.appendFileSync(path.join(__dirname, 'server_debug.log'), logMsg);
+  } catch (err) {
+    console.error('Failed to write to server_debug.log:', err);
+  }
 }
 logToFile('Server starting...');
+
 
 // Check for ffmpeg
 let hasFfmpeg = false;
@@ -265,40 +268,278 @@ function isSupportedUrl(url) {
     const host = new URL(url).hostname.toLowerCase();
     const supported = [
       'tiktok.com', 'facebook.com', 'fb.watch', 'instagram.com',
-      'twitter.com', 'x.com'
+      'twitter.com', 'x.com', 'cdninstagram.com', 'fbcdn.net',
+      'twimg.com', 't.co', 'pinterest.com', 'pin.it'
     ];
     return supported.some(s => host.includes(s));
   } catch { return false; }
 }
 
+
+
+/**
+ * Detects if a URL is a direct media file (image/video) from a CDN.
+ * This allows us to skip yt-dlp entirely for already-resolved links.
+ */
+function isDirectMediaUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    // Broaden coverage for various IG/FB CDN variations
+    const isCdn = host.includes('cdninstagram.com') || 
+                  host.includes('fbcdn.net') || 
+                  host.includes('abs.twimg.com') ||
+                  host.includes('fb.watch') ||
+                  (host.includes('instagram.com') && (parsed.pathname.includes('/cdn-cgi/') || parsed.pathname.includes('/v/')));
+    
+    // Check path for common media extensions — case insensitive, handle query params
+    const hasExt = /\.(jpg|jpeg|png|webp|heic|mp4|webm|m4v|mov|mp3|m4a|ogg)(\?|$)/i.test(parsed.pathname);
+    
+    return isCdn && hasExt;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Scrapes metadata directly from Instagram HTML when yt-dlp is blocked.
+ * Prioritizes extracting full-resolution display_url from Instagram's embedded JSON data.
+ * Falls back to og:image only as a last resort (og:image is often cropped/compressed).
+ */
+async function scrapeInstagramMetadata(url) {
+  try {
+    const userAgents = [
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
+      'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+    ];
+    const ua = userAgents[Math.floor(Math.random() * userAgents.length)];
+    
+    console.log(`Starting HTML Scraper for: ${url} (UA: ${ua.slice(0, 30)}...)`);
+    
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': ua,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
+      },
+      timeout: 10000
+    });
+
+    const html = response.data;
+    logToFile(`Scraper fetched HTML (${html.length} chars) for ${url}`);
+    const media = [];
+
+    // ── Priority 1: Extract full-res display_url from Instagram's embedded JSON ──
+    // Instagram embeds post data in <script type="application/json"> or window.__additionalDataLoaded
+    let fullResImageUrl = null;
+
+    // Helper: recursively search JSON tree for display_resources or display_url (full resolution)
+    const findImageUrlInJson = (obj, depth = 0) => {
+      if (depth > 12 || !obj || typeof obj !== 'object') return null;
+      if (Array.isArray(obj)) {
+        for (const item of obj) { const r = findImageUrlInJson(item, depth + 1); if (r) return r; }
+        return null;
+      }
+      // display_resources: [{src, config_width, config_height}] - pick the largest width
+      if (obj.display_resources && Array.isArray(obj.display_resources) && obj.display_resources.length > 0) {
+        const largest = obj.display_resources.reduce((a, b) => ((b.config_width || 0) > (a.config_width || 0) ? b : a));
+        if (largest.src) return largest.src;
+      }
+      // display_url is the direct full-resolution image URL
+      if (obj.display_url && typeof obj.display_url === 'string' && obj.display_url.startsWith('http')) {
+        return obj.display_url;
+      }
+      for (const key of Object.keys(obj)) {
+        const r = findImageUrlInJson(obj[key], depth + 1);
+        if (r) return r;
+      }
+      return null;
+    };
+
+    // Try window.__additionalDataLoaded JSON blob
+    const additionalDataMatch = html.match(/window\.__additionalDataLoaded\s*\(\s*['"][^'"]+['"]\s*,\s*(\{[\s\S]+?\})\s*\)/);
+    if (additionalDataMatch) {
+      try {
+        const jsonData = JSON.parse(additionalDataMatch[1]);
+        const media_obj = jsonData && (jsonData.graphql && jsonData.graphql.shortcode_media) || (jsonData.items && jsonData.items[0]);
+        if (media_obj) {
+          if (media_obj.is_video && media_obj.video_url) {
+            media.push({ url: media_obj.video_url.replace(/&amp;/g, '&'), type: 'video', quality: 'HD', note: 'Video' });
+          }
+          fullResImageUrl = fullResImageUrl || findImageUrlInJson(media_obj);
+        }
+      } catch (e) { /* ignore parse errors */ }
+    }
+
+    // Try <script type="application/json"> blocks (newer Instagram structure)
+    if (!fullResImageUrl) {
+      const scriptTagRe = /<script[^>]+type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi;
+      let scriptMatch;
+      while ((scriptMatch = scriptTagRe.exec(html)) !== null) {
+        try {
+          const jsonData = JSON.parse(scriptMatch[1]);
+          const found = findImageUrlInJson(jsonData);
+          if (found) { fullResImageUrl = found; break; }
+        } catch (e) { /* continue */ }
+      }
+    }
+
+    // Try window._sharedData (older Instagram structure)
+    if (!fullResImageUrl) {
+      const sharedDataMatch = html.match(/window\._sharedData\s*=\s*(\{[\s\S]+?\});\s*<\/script>/);
+      if (sharedDataMatch) {
+        try {
+          const sharedData = JSON.parse(sharedDataMatch[1]);
+          const postPage = sharedData && sharedData.entry_data && sharedData.entry_data.PostPage && sharedData.entry_data.PostPage[0];
+          const media_obj = postPage && postPage.graphql && postPage.graphql.shortcode_media;
+          if (media_obj) {
+            if (media_obj.is_video && media_obj.video_url && media.length === 0) {
+              media.push({ url: media_obj.video_url.replace(/&amp;/g, '&'), type: 'video', quality: 'HD', note: 'Video' });
+            }
+            fullResImageUrl = fullResImageUrl || findImageUrlInJson(media_obj);
+          }
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    // Try JSON-LD structured data
+    if (!fullResImageUrl) {
+      const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+      if (jsonLdMatch) {
+        try {
+          const ldData = JSON.parse(jsonLdMatch[1]);
+          const ldImage = ldData && (ldData.image || ldData.thumbnailUrl);
+          if (ldImage && typeof ldImage === 'string' && ldImage.startsWith('http')) {
+            fullResImageUrl = ldImage;
+          } else if (Array.isArray(ldImage) && ldImage.length > 0) {
+            fullResImageUrl = ldImage[0];
+          }
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    if (fullResImageUrl) {
+      console.log(`Scraper found FULL-RES image: ${fullResImageUrl.slice(0, 70)}...`);
+      media.push({ url: fullResImageUrl.replace(/&amp;/g, '&'), type: 'photo', quality: 'HD', note: 'Photo' });
+    }
+
+    // ── Priority 2 (Fallback): OG Image ──
+    // og:image is often cropped/compressed by Instagram, only use if nothing better was found
+    // Extract OG Image
+    const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || 
+                         html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    if (ogImageMatch) {
+      console.log(`Scraper found OG Image: ${ogImageMatch[1].slice(0, 50)}...`);
+      let photoUrl = ogImageMatch[1].replace(/&amp;/g, '&');
+      
+      // Instagram heavily crops og:image to a square by appending path parameters.
+      // Remove crop (/c0.135.1080.1080a/) and scale (/s1080x1080/ or /p1080x1080/) params to get the original aspect ratio.
+      photoUrl = photoUrl.replace(/\/c[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z]?\//i, '/');
+      photoUrl = photoUrl.replace(/\/[ps][0-9]+x[0-9]+\//i, '/');
+      console.log(`De-cropped URL generated: ${photoUrl.slice(0, 50)}...`);
+
+      media.push({ url: photoUrl, type: 'photo', quality: 'HD', note: 'Photo' });
+    }
+
+    // Extract OG Video (if no video was already found from JSON)
+    if (media.filter(m => m.type === 'video').length === 0) {
+      const ogVideoMatch = html.match(/<meta[^>]+property=["']og:video["'][^>]+content=["']([^"']+)["']/i) ||
+                           html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:video["']/i);
+      if (ogVideoMatch) {
+        console.log(`Scraper found OG Video: ${ogVideoMatch[1].slice(0, 50)}...`);
+        media.push({ url: ogVideoMatch[1].replace(/&amp;/g, '&'), type: 'video', quality: 'HD', note: 'Video' });
+      }
+    }
+
+    // Try to find titles
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].replace(' • Instagram photos and videos', '') : 'Instagram Post';
+
+    return media.length > 0 ? { success: true, title, media } : null;
+  } catch (err) {
+    console.error('HTML Scraper Error:', err.message);
+    return null;
+  }
+}
+
+
+
+
 // ─── /formats ──────────────────────────────────────────────────────────────
 app.post("/formats", async (req, res) => {
-  const { url } = req.body ?? {};
-  if (!url || !isSupportedUrl(url))
-    return res.status(400).json({ success: false, message: "Invalid or unsupported URL." });
+  let { url } = req.body ?? {};
+  if (!url) return res.status(400).json({ success: false, message: "No URL provided." });
+
+  // Auto-normalize protocol if missing
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  if (!isSupportedUrl(url)) {
+    console.warn(`Rejected URL (400): [${url}]`);
+    logToFile(`Rejected URL (400): ${url}`);
+    return res.status(400).json({ success: false, message: "Invalid or unsupported URL. We support Instagram, TikTok, Facebook, and Twitter." });
+  }
+
+
 
   try {
     console.log(`Analyzing formats for: ${url}`);
+
+    // FAST-TRACK BYPASS: If it's a direct CDN link, don't bother with yt-dlp
+    if (isDirectMediaUrl(url)) {
+      console.log('Direct CDN link detected, bypassing yt-dlp.');
+      const ext = url.includes('.mp4') || url.includes('.webm') ? 'mp4' : 'jpg';
+      const type = ext === 'mp4' ? 'video' : 'photo';
+      
+      return res.json({
+        success: true,
+        videoId: 'cdn_' + Buffer.from(url).toString('base64').slice(0, 8),
+        title: 'Direct Media Link',
+        thumbnail: type === 'photo' ? '/proxy-image?url=' + encodeURIComponent(url) : '',
+        formats: {
+          video: [{ id: 'direct_link', quality: 'Original', format: ext, size: null, type: type, note: 'Direct CDN', url: url }],
+          audio: []
+        },
+        photoUrl: type === 'photo' ? url : null
+      });
+    }
 
     const result = await runYtDlpAsync([
       '--dump-json',
       '--no-warnings',
       '--no-check-certificates',
+      '--no-playlist',
+      '--geo-bypass',
+      '--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
       url
     ], 20000); // 20s timeout for formats
+
 
     logToFile(`Formats result for ${url}: status ${result.status}, stderr: ${result.stderr ? result.stderr.slice(0, 500) : 'none'}`);
 
     if (result.status !== 0) {
       const stderr = result.stderr || '';
-      // Specific tolerance for Instagram "No video formats found" which happens for photo posts
-      const isIgPhotoError = url.includes('instagram.com') && stderr.includes('No video formats found');
+      // Specific tolerance for Instagram errors that occur for photo-only posts
+      const stderrLc = stderr.toLowerCase();
+      const isIgPhotoError = url.includes('instagram.com') && (
+        stderrLc.includes('no video formats found') || 
+        stderrLc.includes('there is no video in this post') ||
+        stderrLc.includes('no formats found')
+      );
 
       if (!isIgPhotoError) {
         const clean = stderr.split('\n').find(l => l.includes('ERROR')) || stderr.slice(0, 300);
         throw new Error(clean.replace('ERROR: ', '').trim() || "Format analysis failed.");
       }
-      console.log('Tolerating IG "No video formats" error for photo extraction fallback.');
+      console.log('Tolerating IG error for photo extraction fallback.');
+
     }
 
     let data = {};
@@ -312,65 +553,62 @@ app.post("/formats", async (req, res) => {
         throw e;
       }
     }
-    const formats = data.formats || [];
-
+    const rawFormats = data.formats || [];
     let videoFormats = [];
     const audioFormats = [];
 
-    formats.forEach(f => {
-      if (f.ext === 'mhtml') return;
+    // IG Carousel support: extract from entries if available
+    const allItems = [data];
+    if (data.entries && Array.isArray(data.entries)) {
+      allItems.push(...data.entries);
+    }
 
-      const hasVideo = f.vcodec && f.vcodec !== 'none';
-      const hasAudio = f.acodec && f.acodec !== 'none';
+    allItems.forEach(item => {
+      const itemFormats = item.formats || [];
+      itemFormats.forEach(f => {
+        if (f.ext === 'mhtml') return;
+        const hasVideo = f.vcodec && f.vcodec !== 'none';
+        const hasAudio = f.acodec && f.acodec !== 'none';
+        const quality = f.height ? `${f.height}p` : 'Standard';
 
-      const quality = f.height ? `${f.height}p` : 'Standard';
+        if (hasVideo && hasAudio) {
+          videoFormats.push({ id: f.format_id, quality, format: f.ext, size: f.filesize || f.filesize_approx, type: 'video', note: '' });
+        } else if (hasVideo && !hasAudio) {
+          videoFormats.push({
+            id: hasFfmpeg ? `${f.format_id}+bestaudio` : f.format_id,
+            quality,
+            format: hasFfmpeg ? 'mp4' : f.ext,
+            size: f.filesize || f.filesize_approx,
+            type: 'video',
+            note: hasFfmpeg ? 'HD' : '(no sound)'
+          });
+        } else if (!hasVideo && hasAudio) {
+          audioFormats.push({ id: f.format_id, quality: f.abr ? `${Math.round(f.abr)}k` : 'Audio', format: f.ext, type: 'audio' });
+        } else if (f.ext === 'jpg' || f.ext === 'png' || f.ext === 'webp' || f.ext === 'jpeg') {
+          videoFormats.push({ id: f.format_id, quality: 'Original', format: f.ext, size: f.filesize, type: 'photo', note: 'Image', url: f.url });
+        }
+      });
 
-      if (hasVideo && hasAudio) {
-        // Combined stream — best option, plays everywhere
-        videoFormats.push({ id: f.format_id, quality, format: f.ext, size: f.filesize || f.filesize_approx, type: 'video', note: '' });
-      } else if (hasVideo && !hasAudio) {
-        // Video-only stream
-        videoFormats.push({
-          id: hasFfmpeg ? `${f.format_id}+bestaudio` : f.format_id,
-          quality,
-          format: hasFfmpeg ? 'mp4' : f.ext,
-          size: f.filesize || f.filesize_approx,
-          type: 'video',
-          note: hasFfmpeg ? 'HD' : '(no sound)'
+      // Photo fallback for this specific item (thumbnails)
+      if (videoFormats.filter(v => v.type === 'photo').length === 0 && item.thumbnails && item.thumbnails.length > 0) {
+        const bestThumb = item.thumbnails.reduce((prev, current) => {
+          const prevArea = (prev.width || 0) * (prev.height || 0);
+          const currArea = (current.width || 0) * (current.height || 0);
+          return prevArea >= currArea ? prev : current;
         });
-      } else if (!hasVideo && hasAudio) {
-        audioFormats.push({ id: f.format_id, quality: f.abr ? `${Math.round(f.abr)}k` : 'Audio', format: f.ext, type: 'audio' });
-      } else if (f.ext === 'jpg' || f.ext === 'png' || f.ext === 'webp' || f.ext === 'jpeg') {
-        videoFormats.push({ id: f.format_id, quality: 'Original', format: f.ext, size: f.filesize, type: 'photo', note: 'Image', url: f.url });
+        if (bestThumb.url) {
+          videoFormats.push({ id: `photo_${item.id || 'res'}`, quality: 'Original', format: 'jpg', size: null, type: 'photo', note: 'HD Image', url: bestThumb.url });
+        }
       }
     });
 
-    // If no formats were found (common for IG photos), fall back to thumbnails
-    if (videoFormats.length === 0 && data.thumbnails && data.thumbnails.length > 0) {
-      // Find the largest thumbnail
-      const bestThumb = data.thumbnails.reduce((prev, current) => {
-        const prevArea = (prev.width || 0) * (prev.height || 0);
-        const currArea = (current.width || 0) * (current.height || 0);
-        return prevArea >= currArea ? prev : current;
-      });
-
-      if (bestThumb.url) {
-        videoFormats.push({
-          id: 'photo_highres',
-          quality: 'Original',
-          format: 'jpg',
-          size: null,
-          type: 'photo',
-          note: 'HD Image',
-          url: bestThumb.url
-        });
-      }
-    } else if (videoFormats.length === 0 && url.includes('instagram.com/p/')) {
-      // Absolute fallback for IG posts: use the single 'url' if available from yt-dlp metadata
+    // Special absolute fallback if still nothing
+    if (videoFormats.length === 0 && url.includes('instagram.com/p/')) {
       if (data.url && !data.url.includes('instagram.com')) {
         videoFormats.push({ id: 'photo_direct', quality: 'Original', format: 'jpg', size: null, type: 'photo', note: 'Image', url: data.url });
       }
     }
+
 
     // Dedup by quality+format+note
     const seen = new Set();
@@ -397,7 +635,40 @@ app.post("/formats", async (req, res) => {
       audioFormats.unshift({ id: 'bestaudio', quality: 'Best', format: 'mp3', type: 'audio', note: 'Converted' });
     }
 
+    // Final check: If no formats found, try the HTML Scraper as a last resort
+    if (uniqueVideo.length === 0 && audioFormats.length === 0 && url.includes('instagram.com')) {
+      console.log(`No formats found via yt-dlp, attempting HTML Scraper fallback for ${url}`);
+      const scraped = await scrapeInstagramMetadata(url);
+      if (scraped && scraped.media.length > 0) {
+        console.log(`HTML Scraper salvaged ${scraped.media.length} items for ${url}`);
+        logToFile(`HTML Scraper salvaged metadata for ${url}`);
+        
+        scraped.media.forEach((m, index) => {
+          uniqueVideo.push({
+            id: `scraped_${index}`,
+            quality: m.quality,
+            format: m.type === 'video' ? 'mp4' : 'jpg',
+            type: m.type,
+            note: m.note,
+            url: m.url
+          });
+        });
+        
+        if (!data.title || data.title === 'Instagram Post') data.title = scraped.title;
+        if (!data.thumbnail) data.thumbnail = scraped.media[0].url;
+      }
+    }
+
+    // Final sanity check
+    if (uniqueVideo.length === 0 && audioFormats.length === 0) {
+      console.warn(`No formats found for successfully analyzed URL: ${url}`);
+      logToFile(`Warning: No formats found for ${url}`);
+      return res.status(422).json({ success: false, message: "No downloadable formats found for this post. It might be restricted or unsupported." });
+    }
+
+
     res.json({
+
       success: true,
       videoId: data.id,
       title: data.title,
@@ -408,13 +679,50 @@ app.post("/formats", async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Formats Error:', err.message);
+    const errorMessage = err.message || 'Unknown error during extraction';
+    console.error(`Formats Error for [${url}]:`, errorMessage);
+    logToFile(`Formats Error for ${url}: ${errorMessage}`);
+
+    // FINAL FALLBACK: HTML Scraper for IG links that failed yt-dlp
+    if (url.includes('instagram.com')) {
+      const scraped = await scrapeInstagramMetadata(url);
+      if (scraped && scraped.media.length > 0) {
+        console.log(`HTML Scraper salvaged ${scraped.media.length} items for ${url}`);
+        logToFile(`HTML Scraper salvaged metadata for ${url}`);
+        
+        const videoItems = scraped.media.map((m, index) => ({
+          id: `scraped_${index}`,
+          quality: m.quality,
+          format: m.type === 'video' ? 'mp4' : 'jpg',
+          type: m.type,
+          note: m.note,
+          url: m.url
+        }));
+
+        return res.json({
+          success: true,
+          videoId: 'scraped_' + Buffer.from(url).toString('base64').slice(0, 6),
+          title: scraped.title,
+          thumbnail: '/proxy-image?url=' + encodeURIComponent(scraped.media[0].url),
+          formats: { video: videoItems, audio: [] },
+          photoUrl: scraped.media.find(m => m.type === 'photo')?.url || null
+        });
+      }
+    }
+
     const isPhotoUrl = url.includes('photo') || url.includes('/p/');
     const typeLabel = isPhotoUrl ? "photo or post" : "video";
-    const msg = `We were unable to analyze this ${typeLabel}. It might be private, restricted, or the platform is blocking our request. Please check the URL and try again.`;
-    res.status(422).json({ success: false, message: msg });
+    
+    let msg = `We were unable to analyze this ${typeLabel}. It might be private, restricted, or the platform is blocking our request.`;
+    
+    if (errorMessage.includes('Private')) msg = "This post is private. We can only download public content.";
+    if (errorMessage.includes('Sign in') || errorMessage.includes('Login required')) msg = "Instagram is requiring a login for this post. Please try another link.";
+    
+    res.status(422).json({ success: false, message: msg, debug: errorMessage });
   }
 });
+
+
 
 // ─── /download ─────────────────────────────────────────────────────────────
 app.post("/download", async (req, res) => {
@@ -426,20 +734,48 @@ app.post("/download", async (req, res) => {
     const vidId = videoId || Buffer.from(url).toString('base64').slice(0, 10).replace(/[^a-zA-Z0-9]/g, '');
     const cleanTitle = sanitizeFilename(title || 'video');
 
-    // Handle synthetic photo format
-    if (formatId.startsWith('photo_')) {
+    console.log(`POST /download: url=${url.slice(0, 30)}... formatId=${formatId} videoId=${videoId}`);
+    logToFile(`POST /download: url=${url} formatId=${formatId} videoId=${videoId}`);
+
+
+    const fid = String(formatId).trim();
+    console.log(`Checking formatId: "${fid}" against "photo_" or "scraped_"`);
+
+    // Handle synthetic photo format (including scraped ones)
+    if (fid.startsWith('photo_') || fid.startsWith('scraped_')) {
+      console.log("-> Entering synthetic photo download branch");
       const photoUrl = req.body.photoUrl || url; // Fallback to url if photoUrl not provided
       const ext = photoUrl.includes('.png') ? 'png' : 'jpg';
       const filePath = path.join(tempDir, `photo_${vidId}.${ext}`);
 
-      console.log(`Downloading photo: ${cleanTitle}`);
-      const response = await axios({ method: 'GET', url: photoUrl, responseType: 'stream' });
-      const writer = fs.createWriteStream(filePath);
-      response.data.pipe(writer);
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
+
+      try {
+        console.log(`Downloading photo from: ${photoUrl.slice(0, 50)}... for ${cleanTitle}`);
+        const response = await axios({ 
+          method: 'GET', 
+          url: photoUrl, 
+          responseType: 'stream',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Referer': 'https://www.instagram.com/'
+          },
+          timeout: 15000
+        });
+
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
+        await new Promise((resolve, reject) => {
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+          response.data.on('error', reject);
+        });
+        console.log(`Successfully saved photo to ${filePath}`);
+      } catch (dlErr) {
+        console.error(`Salvage download failed: ${dlErr.message}`);
+        logToFile(`Salvage download failed for ${cleanTitle}: ${dlErr.message}`);
+        throw new Error(`Failed to fetch media from CDN: ${dlErr.message}`);
+      }
+
 
       return res.json({
         success: true,
