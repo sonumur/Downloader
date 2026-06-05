@@ -44,7 +44,7 @@ function injectScript(tag, container = document.body) {
     const data = await response.json();
     if (data.success && data.settings) {
       if (data.settings.monetagVignetteId) vignetteId = data.settings.monetagVignetteId;
-      if (data.settings.monetagBannerZones) {
+      if (data.settings.monetagBannerZones && data.settings.monetagBannerZones !== "") {
         try {
           bannerZones = typeof data.settings.monetagBannerZones === 'string' 
             ? JSON.parse(data.settings.monetagBannerZones) 
