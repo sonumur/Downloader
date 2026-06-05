@@ -198,12 +198,12 @@ app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
     // Monetag and base requirements
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://n6wxm.com https://my.rtmk.net https://www.gstatic.com https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.n6wxm.com https://n6wxm.com https://*.rtmk.net https://my.rtmk.net https://www.gstatic.com https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",
-    `frame-src https://n6wxm.com https://my.rtmk.net https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
-    `connect-src 'self' https://n6wxm.com https://my.rtmk.net https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://*.firebasejs.map ${extraCspSources}`,
+    `frame-src https://*.n6wxm.com https://n6wxm.com https://*.rtmk.net https://my.rtmk.net https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
+    `connect-src 'self' https://*.n6wxm.com https://n6wxm.com https://*.rtmk.net https://my.rtmk.net https://firestore.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com https://www.googletagmanager.com https://www.gstatic.com https://*.firebasejs.map ${extraCspSources}`,
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "object-src 'none'",
