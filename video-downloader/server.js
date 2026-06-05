@@ -193,7 +193,7 @@ app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
     // Monetag and base requirements
-    `script-src 'self' 'unsafe-inline' https://n6wxm.com https://my.rtmk.net https://www.gstatic.com https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://n6wxm.com https://my.rtmk.net https://www.gstatic.com https://www.google.com https://www.googletagmanager.com ${extraCspSources}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: http:",

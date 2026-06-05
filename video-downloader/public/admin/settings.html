@@ -39,9 +39,13 @@
         <div class="settings-card-body">
           <div class="settings-field"><label>Meta Title</label><input type="text" id="metaTitle" placeholder="My Site - Best Downloader"></div>
           <div class="settings-field"><label>Meta Description</label><textarea id="metaDesc" placeholder="Page description for search engines..."></textarea></div>
-          <div class="settings-row">
+                    <div class="settings-row">
+            <div class="settings-field"><label>Google AdSense ID (Legacy)</label><input type="text" id="adsenseId" placeholder="ca-pub-XXXXXX"></div>
             <div class="settings-field"><label>Google Analytics ID</label><input type="text" id="gaId" placeholder="G-XXXXXXXXXX"></div>
-            <div class="settings-field"><label>Google AdSense ID</label><input type="text" id="adsenseId" placeholder="ca-pub-XXXXXX"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-field"><label>Monetag Vignette Zone ID</label><input type="text" id="monetagVignetteId" placeholder="11104764"></div>
+            <div class="settings-field"><label>Monetag Banner Zones (JSON)</label><input type="text" id="monetagBannerZones" placeholder='{"Home_Top": "1234567"}'></div>
           </div>
         </div>
         <div class="settings-footer"><button class="btn-save" onclick="saveSection('seo')">Save Changes</button></div>
@@ -86,8 +90,10 @@ async function initSettings() {
   // SEO
   if (s.metaTitle) document.getElementById('metaTitle').value = s.metaTitle;
   if (s.metaDesc) document.getElementById('metaDesc').value = s.metaDesc;
-  if (s.gaId) document.getElementById('gaId').value = s.gaId;
+    if (s.gaId) document.getElementById('gaId').value = s.gaId;
   if (s.adsenseId) document.getElementById('adsenseId').value = s.adsenseId;
+  if (s.monetagVignetteId) document.getElementById('monetagVignetteId').value = s.monetagVignetteId;
+  if (s.monetagBannerZones) document.getElementById('monetagBannerZones').value = typeof s.monetagBannerZones === 'string' ? s.monetagBannerZones : JSON.stringify(s.monetagBannerZones);
   // Toggles
   if (s.features) {
     document.getElementById('toggleYoutube').checked = s.features.youtube !== false;
@@ -117,6 +123,8 @@ async function saveSection(section) {
         metaDesc: document.getElementById('metaDesc').value.trim(),
         gaId: document.getElementById('gaId').value.trim(),
         adsenseId: document.getElementById('adsenseId').value.trim(),
+        monetagVignetteId: document.getElementById('monetagVignetteId').value.trim(),
+        monetagBannerZones: document.getElementById('monetagBannerZones').value.trim(),
       };
     } else if (section === 'features') {
       data = {
