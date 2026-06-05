@@ -69,7 +69,10 @@ function injectScript(tag, container = document.body) {
         const zoneId = bannerZones[slot.id] || bannerZones['default'];
         if (zoneId) {
             console.log(`[Monetag] Injecting banner for zone ${zoneId} into slot ${index}`);
-            const bannerTag = `<script data-cfasync="false" src="//n6wxm.com/vignette.min.js?z=${zoneId}"></script>`;
+            // If user pasted a full script tag, use it as is; otherwise wrap the ID
+            const bannerTag = String(zoneId).includes('<script') 
+                ? zoneId 
+                : `<script data-cfasync="false" src="//n6wxm.com/vignette.min.js?z=${zoneId}"></script>`;
             injectScript(bannerTag, slot);
         } else {
             console.warn(`[Monetag] Slot ${index} has no Zone ID configured.`);
