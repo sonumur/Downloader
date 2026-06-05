@@ -243,48 +243,43 @@ const allowedOrigins = process.env.ALLOWED_ORIGIN
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
+const SETTINGS_FILE = path.join(__dirname, 'temp', 'settings.json');
+
 // ─── Shared Public API ───────────────────────────────────────────────────
-app.get("/api/settings", async (req, res) => {
+// GET settings (reads from local cache for performance and to avoid Firestore Auth issues)
+app.get("/api/settings", (req, res) => {
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const apiKey = process.env.FIREBASE_API_KEY;
-    if (!projectId || !apiKey) {
-      console.error("[Settings API] Missing Firebase configuration in env");
-      return res.status(500).json({ success: false, message: "Missing Firebase configuration" });
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+      return res.json({ success: true, settings: data });
     }
-    
-    // Fetch settings/site document from Firestore REST API
-    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/settings/site?key=${apiKey}`;
-    console.log(`[Settings API] Fetching from: ${url.replace(apiKey, 'REDACTED')}`);
-    
-    const response = await axios.get(url);
-    const rawData = response.data.fields || {};
-    
-    // Extract values from Firestore REST format
-    const settings = {};
-    for (const key in rawData) {
-      const val = rawData[key];
-      if (val.stringValue !== undefined) settings[key] = val.stringValue;
-      else if (val.integerValue !== undefined) settings[key] = parseInt(val.integerValue);
-      else if (val.booleanValue !== undefined) settings[key] = val.booleanValue;
-      else if (val.mapValue !== undefined) {
-          const map = {};
-          const fields = val.mapValue.fields || {};
-          for (const mk in fields) {
-            const mv = fields[mk];
-            map[mk] = mv.stringValue !== undefined ? mv.stringValue : (mv.integerValue || mv.booleanValue || "");
-          }
-          settings[key] = map;
-      }
-    }
-    
-    console.log("[Settings API] Successfully loaded settings");
-    res.json({ success: true, settings });
+    res.json({ success: false, message: "Settings not synced yet" });
   } catch (err) {
-    const status = err.response ? err.response.status : 500;
-    const errorData = err.response ? JSON.stringify(err.response.data) : err.message;
-    console.error(`[Settings API] Error ${status}:`, errorData);
-    res.status(status).json({ success: false, message: "Failed to load settings", error: err.message });
+    res.status(500).json({ success: false, message: "Failed to load cached settings" });
+  }
+});
+
+// ADMIN ONLY: Sync settings to local file
+app.post("/admin/api/sync-settings", express.json(), (req, res) => {
+  try {
+    // Basic protection: only trust requests coming from the admin area
+    const referer = req.headers.referer || "";
+    if (!referer.includes('/admin/')) {
+       return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const { settings } = req.body;
+    if (!settings) return res.status(400).json({ success: false, message: "No settings provided" });
+
+    // Create temp dir if it doesn't exist
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+    
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+    console.log("[Settings] Local cache updated from Admin Panel");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Settings Search] Sync error:", err.message);
+    res.status(500).json({ success: false, message: "Failed to sync settings" });
   }
 });
 

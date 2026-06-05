@@ -138,6 +138,12 @@ async function saveSection(section) {
       };
     }
     await saveSettings(data);
+    // Sync to local server cache for ad loader
+    await fetch('/admin/api/sync-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: data })
+    });
     showToast('Settings saved successfully!');
     btn.textContent = '✓ Saved';
     btn.style.background = '#16a34a';
